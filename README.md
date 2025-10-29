@@ -1,11 +1,16 @@
 PHP fejlesztői akadémia
 =======================
-A gyakorlatok lehetséges megoldásaira mutatunk példákat
+Az alábbi gyakorlatokat fogjuk elvégezni a kurzuson. A repóban javaslatok találhatóak ezek lehetséges megoldásaita.
 # PHP környezetek
-A gyakorlatokhoz a PHP-CLI parancssori k0rnyezetre van szükség. Ha ezek nem találhatóak meg a saját gépünkön akkor ajánlott dockeres környezetben futtatni. 
+A gyakorlatokhoz a PHP-CLI parancssori környezetre van szükség. Ha ezek nem találhatóak meg a saját gépünkön akkor ajánlott dockeres környezetben PHP konténert futtatni és ezen keresztül indítani a feladatokat. 
 Ehhez tartozik egy `docker-compose.yml` fájl melyben különböző PHP verziókat találunk (PHP 8.2 - 8.5)
+### Docker környezet indítása
 ```bash
 docker-compose up -d
+```
+### Példa konténerben történő futtatásra
+```sh
+docker exec -it php-84 php traffic-safety/src/index.php
 ```
 # Gyakorlatok
 ## PHP újdonságok
@@ -94,9 +99,10 @@ class Accident {
 }
 ```
 ### Javasolt megoldás
-```php-ujdonsagok/Accident.php```
+`php-ujdonsagok/Accident.php`
 ## Tesztek
-A tests-exercise mappában található projekthez írjunk teszteket.
+A `tests-exercise` mappában található projekthez írjunk teszteket.
+
 Projektstruktúra:
 ```
 tests-exercise/
@@ -117,13 +123,15 @@ tests-exercise/
 │   ├── Service/
 └── composer.json
 ```
-1. Írjunk egységteszteket az Accident osztályhoz
-2. Írjunk egységtesztet a RoadSegment  osztály calculateRiskFactor metódusához
-3. Írjunk egységtesztet az Intersection osztály calculateSafetyScore metódusához
+1. Írjunk egységteszteket az `Accident` osztályhoz
+2. Írjunk egységtesztet a `RoadSegment`  osztály `calculateRiskFactor` metódusához
+3. Írjunk egységtesztet az `Intersection` osztály `calculateSafetyScore` metódusához
 4. Írjunk tesztet az SafetyAnalysisService osztályhoz
-   1. AccidentRepository, IntersectionRepository osztályok használatával, tesztadatbázissal
-   2. AccidentRepository, IntersectionRepository osztályok helyett használjunk mock objektumot
+   - `AccidentRepository`, `IntersectionRepository` osztályok használatával, tesztadatbázissal
+   - `AccidentRepository`, `IntersectionRepository` osztályok helyett használjunk mock objektumot
 ### Javasolt megoldás
+`tests-solution` mappában.
+
 Futtatás:
 ```bash
 cd tests-solution
@@ -223,6 +231,8 @@ $manager->sendNotification(99, "Nem létező user.", 'email');
 ```
 
 ### Javasolt megoldás
+`clean-code` mappában
+
 Futtatás:
 ```sh
 cd clean-code
@@ -292,6 +302,8 @@ class UserRepository
 }
 ```
 ### Javasolt megoldás
+`code-review` mappában
+
 Futtatás:
 ```sh
 cd code-review
@@ -480,6 +492,8 @@ echo "Exported CSV to: {$csv}\n";
 echo "Done.\n";
 ```
 ### Javasolt megoldás
+`traffic-safety` mappában.
+
 Futtatás:
 ```sh
 cd traffic-safety
