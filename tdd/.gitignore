@@ -1,0 +1,6 @@
+vendor
+coverage*
+tests/*
+src/*
+.phpunit.cache/*
+.phpunit.result.cache
