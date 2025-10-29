@@ -43,7 +43,7 @@ final class FileAccidentRepository implements AccidentRepositoryInterface
 
         $rows = [];
         foreach (file($this->path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
-            $parts = str_getcsv($line);
+            $parts = str_getcsv($line, ",", '"', "\\");
             if (count($parts) < 6) {
                 continue; // skip invalid line
             }

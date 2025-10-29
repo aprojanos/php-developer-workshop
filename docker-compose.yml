@@ -1,0 +1,36 @@
+services:
+  php-8-2:
+    image: php:8.2-cli
+    container_name: php-82
+    volumes:
+      - ./:/app
+    working_dir: /app
+    tty: true
+    stdin_open: true
+
+  php-8-3:
+    image: php:8.3-cli
+    container_name: php-83
+    volumes:
+      - ./:/app
+    working_dir: /app
+    tty: true
+    stdin_open: true
+
+  php-8-4:
+    image: php:8.4-cli
+    container_name: php-84
+    volumes:
+      - ./:/app
+    working_dir: /app
+    tty: true
+    stdin_open: true
+
+  php-8-5:
+    image: php:8.5.0RC3-cli
+    container_name: php-85
+    volumes:
+      - ./:/app
+    working_dir: /app
+    tty: true
+    stdin_open: true
