@@ -1,0 +1,26 @@
+{
+    "name": "gyakorlatok/traffic-safety-tests",
+    "description": "Közlekedésbiztonsági rendszer PHPUnit tesztelési gyakorlathoz",
+    "type": "project",
+    "require": {
+        "php": "^8.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^12.4",
+        "fakerphp/faker": "^1.24"
+    },
+    "autoload": {
+        "psr-4": {
+            "TrafficSafetyTests\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "TrafficSafetyTests\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test-coverage": "phpunit --coverage-html coverage"
+    }    
+}
