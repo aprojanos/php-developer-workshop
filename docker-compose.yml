@@ -5,8 +5,7 @@ services:
     volumes:
       - ./:/app
     working_dir: /app
-    tty: true
-    stdin_open: true
+    command: ["sleep", "infinity"]
 
   php-8-3:
     image: php:8.3-cli
@@ -14,17 +13,14 @@ services:
     volumes:
       - ./:/app
     working_dir: /app
-    tty: true
-    stdin_open: true
-
+    command: ["sleep", "infinity"]
   php-8-4:
     image: php:8.4-cli
     container_name: php-84
     volumes:
       - ./:/app
     working_dir: /app
-    tty: true
-    stdin_open: true
+    command: ["sleep", "infinity"]
 
   php-8-5:
     image: php:8.5.0RC3-cli
@@ -32,5 +28,4 @@ services:
     volumes:
       - ./:/app
     working_dir: /app
-    tty: true
-    stdin_open: true
+    command: ["sleep", "infinity"]
