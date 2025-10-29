@@ -69,7 +69,7 @@ class RoadSegment
                 $baseRisk *= 1.3;
                 break;
             case 'rural':
-                $baseRisk *= 1.1;
+                $baseRisk *= 1.0;
                 break;
         }
 

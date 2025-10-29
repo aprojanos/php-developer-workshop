@@ -13,6 +13,7 @@ class RoadSegmentTest extends TestCase
         $urban = new RoadSegment('Main St', 2.5, 50, 15000, 'urban');
         $rural = new RoadSegment('Country Rd', 15.0, 80, 5000, 'rural');
 
+        print "rural: " . $rural->calculateRiskFactor() . " - urban:  " . $urban->calculateRiskFactor() . "\n";
         $this->assertGreaterThan($urban->calculateRiskFactor(), $highway->calculateRiskFactor());
         $this->assertGreaterThan($rural->calculateRiskFactor(), $urban->calculateRiskFactor());
     }

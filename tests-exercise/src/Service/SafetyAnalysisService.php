@@ -100,7 +100,6 @@ class SafetyAnalysisService
         if (!$intersection->hasTrafficLights() && count($accidents) > 2) {
             $recommendations[] = "Consider installing traffic lights";
         }
-
         if ($this->countWeatherRelatedAccidents($accidents) > count($accidents) * 0.3) {
             $recommendations[] = "Improve drainage and anti-skid surface";
         }

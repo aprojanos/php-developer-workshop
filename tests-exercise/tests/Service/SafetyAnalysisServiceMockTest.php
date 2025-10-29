@@ -1,4 +1,3 @@
-
 <?php
 
 namespace TrafficSafetyTests\Tests\Service;
@@ -53,7 +52,6 @@ class SafetyAnalysisServiceMockTest extends TestCase
 
         // Teszt végrehajtása
         $analysis = $this->service->analyzeIntersectionSafety(1);
-
         // Assert-ek
         $this->assertEquals('Test Cross', $analysis['intersection_name']);
         $this->assertEquals(2, $analysis['total_accidents']);
