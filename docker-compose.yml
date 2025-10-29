@@ -15,7 +15,9 @@ services:
     working_dir: /app
     command: ["sleep", "infinity"]
   php-8-4:
-    image: php:8.4-cli
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: php-84
     volumes:
       - ./:/app
