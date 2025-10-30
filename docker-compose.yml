@@ -1,5 +1,5 @@
 services:
-  php-8-2:
+  php-82:
     image: php:8.2-cli
     container_name: php-82
     volumes:
@@ -7,14 +7,14 @@ services:
     working_dir: /app
     command: ["sleep", "infinity"]
 
-  php-8-3:
+  php-83:
     image: php:8.3-cli
     container_name: php-83
     volumes:
       - ./:/app
     working_dir: /app
     command: ["sleep", "infinity"]
-  php-8-4:
+  php-84:
     build:
       context: .
       dockerfile: Dockerfile
@@ -24,7 +24,7 @@ services:
     working_dir: /app
     command: ["sleep", "infinity"]
 
-  php-8-5:
+  php-85:
     image: php:8.5.0RC3-cli
     container_name: php-85
     volumes:
