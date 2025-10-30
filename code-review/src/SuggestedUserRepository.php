@@ -6,7 +6,6 @@ use PDO;
 use PDOException;
 use Psr\Log\LoggerInterface;
 use InvalidArgumentException;
-use RuntimeException;
 
 /**
  * Simple User repository using PDO.
@@ -14,6 +13,9 @@ use RuntimeException;
  */
 class SuggestedUserRepository
 {
+    private const DB_ERROR_MESSAGE = 'Database error';
+    private const INTERNAL_ERROR_MESSAGE = 'Internal error';
+
     public function __construct(private $pdo, private LoggerInterface $logger)
     {
         // explicit error mode beállítása ha a hívó nem tette meg
@@ -26,7 +28,7 @@ class SuggestedUserRepository
      * @param int $id
      * @return array|null associative array or null if not found
      * @throws InvalidArgumentException on invalid input
-     * @throws RuntimeException on DB error
+     * @throws DatabaseException on DB error
      */
     public function findUser(int $id): ?array
     {
@@ -43,7 +45,7 @@ class SuggestedUserRepository
             return $user === false ? null : $user;
         } catch (PDOException $e) {
             $this->logger->error('DB error in findUser', ['exception' => $e]);
-            throw new RuntimeException('Database error');
+            throw new DatabaseException(self::DB_ERROR_MESSAGE);
         }
     }
 
@@ -53,7 +55,8 @@ class SuggestedUserRepository
      * @param array $data must contain 'name', 'email', 'password' (plain)
      * @return int inserted user id
      * @throws InvalidArgumentException
-     * @throws RuntimeException
+     * @throws DatabaseException
+     * @throws InternalException
      */
     public function createUser(array $data): int
     {
@@ -66,7 +69,7 @@ class SuggestedUserRepository
         $passwordHash = password_hash($data['password'], PASSWORD_DEFAULT);
         if ($passwordHash === false) {
             $this->logger->error('Password hashing failed');
-            throw new RuntimeException('Internal error');
+            throw new InternalException(self::INTERNAL_ERROR_MESSAGE);
         }
 
         try {
@@ -84,7 +87,7 @@ class SuggestedUserRepository
             return $id;
         } catch (PDOException $e) {
             $this->logger->error('DB error in createUser', ['exception' => $e]);
-            throw new RuntimeException('Database error');
+            throw new DatabaseException(self::DB_ERROR_MESSAGE);
         }
     }
 
@@ -144,6 +147,8 @@ class SuggestedUserRepository
      *
      * @param int $id
      * @return bool true if deleted (rowCount > 0)
+     * @throws InvalidArgumentException
+     * @throws DatabaseException
      */
     public function deleteUser(int $id): bool
     {
@@ -160,7 +165,7 @@ class SuggestedUserRepository
             return $deleted;
         } catch (PDOException $e) {
             $this->logger->error('DB error in deleteUser', ['exception' => $e]);
-            throw new RuntimeException('Database error');
+            throw new DatabaseException(self::DB_ERROR_MESSAGE);
         }
     }
 }
