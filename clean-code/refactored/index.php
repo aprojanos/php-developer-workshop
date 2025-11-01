@@ -21,6 +21,7 @@ spl_autoload_register(function ($class) {
 use Refactored\Repository\InMemoryUserRepository;
 use Refactored\Factory\NotificationSenderFactory;
 use Refactored\Service\NotificationService;
+use Refactored\Service\UserService;
 use Refactored\Model\NotificationType;
 
 echo "Refactored Notification Sender" . PHP_EOL;
@@ -34,17 +35,16 @@ $userRepository = new InMemoryUserRepository();
 $senderFactory = new NotificationSenderFactory();
 
 // "Injektáljuk" a függőségeket a service-be
-$notificationService = new NotificationService(
-    $userRepository,
-    $senderFactory
-);
+$notificationService = new NotificationService($senderFactory);
+
 
 // --- Alkalmazás Logika ---
 
 // Típusbiztos hívás az Enum-mal
-$notificationService->sendNotification(1, "Ez egy refaktorált üzenet.", NotificationType::Email);
+$userService = new UserService($userRepository);
 
-$notificationService->sendNotification(2, "Ez egy SMS a másik usernek.", NotificationType::Sms);
-
-$notificationService->sendNotification(99, "Nem létező user.", NotificationType::Email);
+$user = $userService->findById(1);
+$notificationService->sendNotification($user, "Ez egy refaktorált üzenet.", NotificationType::Email);
+$user = $userService->findById(2);
+$notificationService->sendNotification($user, "Ez egy SMS a másik usernek.", NotificationType::Sms);
 

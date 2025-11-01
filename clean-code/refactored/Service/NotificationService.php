@@ -6,7 +6,7 @@ namespace Refactored\Service;
 use Refactored\Contract\UserRepositoryInterface;
 use Refactored\Factory\NotificationSenderFactory;
 use Refactored\Model\NotificationType;
-
+use Refactored\Model\User;
 // A fő service, ami összerakja a logikát.
 // Csak absztrakcióktól függ (DIP).
 class NotificationService
@@ -15,20 +15,12 @@ class NotificationService
     // PHP 8.0: Constructor Property Promotion
     // A függőségeket "injektáljuk" (Dependency Injection).
     public function __construct(
-        private readonly UserRepositoryInterface $userRepository,
         private readonly NotificationSenderFactory $senderFactory
     ) {}
 
-    public function sendNotification(int $userId, string $message, NotificationType $type): bool
+    public function sendNotification(User $user, string $message, NotificationType $type): bool
     {
         // 1. Felelősség: Felhasználó lekérése (delegálva a Repository-nak)
-        $user = $this->userRepository->findById($userId);
-
-        if ($user === null) {
-            echo "User not found with ID: $userId" . PHP_EOL;
-            return false;
-        }
-
         // 2. Felelősség: Üzenet formázása (itt egyszerű, de ki lehetne szervezni)
         $formattedMessage = "Kedves " . $user->name . "! Üzenet: " . $message;
 
