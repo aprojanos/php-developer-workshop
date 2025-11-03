@@ -28,10 +28,5 @@ final readonly class AccidentLocationDTO
     {
         return $this->locationType === LocationType::INTERSECTION ? $this->locationId : null;
     }
-
-    public function getDistanceFromStart(): ?float
-    {
-        return $this->distanceFromStart;
-    }
 }
 
