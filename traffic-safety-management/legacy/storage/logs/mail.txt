@@ -1,0 +1,9 @@
+Mail sent to: safety@example.com, subject: New accident
+{"occurredAt":"2025-10-28","location":"R\u00e1k\u00f3czu \u00fat 3.","severity":"minor","type":"PDO","cost":250,"roadSegmentId":10}
+-----------------------------
+Mail sent to: safety@example.com, subject: New accident
+{"occurredAt":"2025-10-29","location":"Zsolnay u. 12.","severity":"minor","type":"Injury","cost":150,"roadSegmentId":3,"intersectionId":7}
+-----------------------------
+Mail sent to: safety@example.com, subject: New accident
+{"occurredAt":"2025-10-31","location":"M\u00e1rt\u00edrok \u00fatja 30","severity":"severe","type":"Injury","cost":400,"intersectionId":12}
+-----------------------------
