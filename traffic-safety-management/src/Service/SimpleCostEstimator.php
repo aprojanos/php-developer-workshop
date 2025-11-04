@@ -3,6 +3,7 @@ namespace App\Service;
 
 use App\Model\AccidentBase;
 use App\Enum\InjurySeverity;
+use App\Contract\CostEstimatorStrategyInterface;
 
 final class SimpleCostEstimator implements CostEstimatorStrategyInterface
 {

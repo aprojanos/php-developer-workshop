@@ -2,7 +2,7 @@
 
 namespace App\Enum;
 
-enum VisibilityConditions: string {
+enum VisibilityCondition: string {
     case EXCELLENT = 'excellent';
     case GOOD = 'good';
     case FAIR = 'fair';

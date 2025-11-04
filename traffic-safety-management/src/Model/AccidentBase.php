@@ -5,9 +5,9 @@ use App\Enum\InjurySeverity;
 use App\Enum\AccidentType;
 use App\Enum\CollisionType;
 use App\Enum\CauseFactor;
-use App\Enum\WeatherConditions;
-use App\Enum\RoadConditions;
-use App\Enum\VisibilityConditions;
+use App\Enum\WeatherCondition;
+use App\Enum\RoadCondition;
+use App\Enum\VisibilityCondition;
 use App\DTO\AccidentLocationDTO;
 
 abstract class AccidentBase
@@ -21,9 +21,9 @@ abstract class AccidentBase
         public readonly ?string $locationDescription = null,
         public readonly ?CollisionType $collisionType = null,
         public readonly ?CauseFactor $causeFactor = null,
-        public readonly ?WeatherConditions $weatherConditions = null,
-        public readonly ?RoadConditions $roadConditions = null,
-        public readonly ?VisibilityConditions $visibilityConditions = null,
+        public readonly ?WeatherCondition $weatherCondition = null,
+        public readonly ?RoadCondition $roadCondition = null,
+        public readonly ?VisibilityCondition $visibilityCondition = null,
         public readonly int $injuredPersonsCount = 0
     ) {}
 
@@ -80,16 +80,16 @@ abstract class AccidentBase
             $report .= "\nCause Factor: " . $this->causeFactor->value;
         }
         
-        if ($this->weatherConditions !== null) {
-            $report .= "\nWeather: " . $this->weatherConditions->value;
+        if ($this->weatherCondition !== null) {
+            $report .= "\nWeather: " . $this->weatherCondition->value;
         }
         
-        if ($this->roadConditions !== null) {
-            $report .= "\nRoad Conditions: " . $this->roadConditions->value;
+        if ($this->roadCondition !== null) {
+            $report .= "\nRoad Conditions: " . $this->roadCondition->value;
         }
         
-        if ($this->visibilityConditions !== null) {
-            $report .= "\nVisibility: " . $this->visibilityConditions->value;
+        if ($this->visibilityCondition !== null) {
+            $report .= "\nVisibility: " . $this->visibilityCondition->value;
         }
 
         return $report;

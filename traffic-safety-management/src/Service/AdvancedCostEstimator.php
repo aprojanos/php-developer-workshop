@@ -4,6 +4,7 @@ namespace App\Service;
 use App\Model\AccidentBase;
 use App\Enum\InjurySeverity;
 use App\Enum\RoadClassification;
+use App\Contract\CostEstimatorStrategyInterface;
 
 /**
  * A more advanced estimator that considers:

@@ -2,7 +2,7 @@
 
 namespace App\Enum;
 
-enum RoadConditions: string {
+enum RoadCondition: string {
     case DRY = 'dry';
     case WET = 'wet';
     case SNOW_COVERED = 'snow_covered';

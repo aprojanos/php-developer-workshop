@@ -21,6 +21,33 @@ use App\ValueObject\MonetaryAmount;
 final class CountermeasureFactory
 {
     /**
+     * Create a Countermeasure from array data (simplified interface)
+     * 
+     * @param array{
+     *     id?: int,
+     *     name: string,
+     *     target_type: string|TargetType,
+     *     applicability_rules?: array{
+     *         intersection_types?: array<string|IntersectionType>,
+     *         intersection_control_types?: array<string|IntersectionControlType>,
+     *         road_classifications?: array<int|RoadClassification>
+     *     },
+     *     affected_collision_types?: array<string|CollisionType>,
+     *     affected_severities?: array<string|InjurySeverity>,
+     *     cmf?: float,
+     *     lifecycle_status?: string|LifecycleStatus,
+     *     implementation_cost?: float|array{amount: float, currency?: string}|MonetaryAmount,
+     *     expected_annual_savings?: float|null,
+     *     evidence?: string|null
+     * } $data
+     */
+    public static function create(array $data): Countermeasure
+    {
+        $data['id'] = $data['id'] ?? random_int(1000, 9999);
+        return self::createFromArray($data);
+    }
+
+    /**
      * @param array{
      *     id: int,
      *     name: string,
