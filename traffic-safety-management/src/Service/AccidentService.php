@@ -2,11 +2,11 @@
 namespace App\Service;
 
 use App\Contract\AccidentRepositoryInterface;
-use App\Contract\CostEstimatorStrategyInterface;
+use App\Contract\CostCalculatorStrategyInterface;
 use App\Contract\LoggerInterface;
 use App\Contract\NotifierInterface;
 use App\Model\AccidentBase;
-use App\Service\SimpleCostEstimator;
+use App\Service\SimpleCostCalculator;
 use App\DTO\AccidentLocationDTO;
 use App\DTO\AccidentSearchDTO;
 use App\ValueObject\TimePeriod;
@@ -22,7 +22,7 @@ final class AccidentService
 {
     public function __construct(
         private AccidentRepositoryInterface $repository,
-        private CostEstimatorStrategyInterface $estimator = new SimpleCostEstimator(),
+        private CostCalculatorStrategyInterface $costCalculator = new SimpleCostCalculator(),
         private ?LoggerInterface $logger = null,
         private ?NotifierInterface $notifier = null,
     ) {}
@@ -52,7 +52,7 @@ final class AccidentService
     {
         $sum = 0.0;
         foreach ($this->repository->all() as $accident) {
-            $sum += $this->estimator->estimate($accident);
+            $sum += $this->costCalculator->calculate($accident);
         }
         return $sum;
     }
@@ -77,7 +77,7 @@ final class AccidentService
     {
         $sum = 0.0;
         foreach ($accidents as $accident) {
-            $sum += $this->estimator->estimate($accident);
+            $sum += $this->costCalculator->calculate($accident);
         }
         return $sum;
     }

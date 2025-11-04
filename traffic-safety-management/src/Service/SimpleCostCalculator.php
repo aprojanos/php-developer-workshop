@@ -3,11 +3,11 @@ namespace App\Service;
 
 use App\Model\AccidentBase;
 use App\Enum\InjurySeverity;
-use App\Contract\CostEstimatorStrategyInterface;
+use App\Contract\CostCalculatorStrategyInterface;
 
-final class SimpleCostEstimator implements CostEstimatorStrategyInterface
+final class SimpleCostCalculator implements CostCalculatorStrategyInterface
 {
-    public function estimate(AccidentBase $accident): float
+    public function calculate(AccidentBase $accident): float
     {
         return match($accident->severity) {
             InjurySeverity::MINOR => $accident->cost + 10000,
