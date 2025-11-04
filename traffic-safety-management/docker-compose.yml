@@ -1,0 +1,76 @@
+services:
+  php-cli:
+    build:
+      context: .
+      dockerfile: Dockerfile.php-cli
+    container_name: traffic-safety-php-cli
+    working_dir: /var/www/html
+    volumes:
+      - ./src:/var/www/html/src
+      - ./tests:/var/www/html/tests
+      - ./vendor:/var/www/html/vendor
+      - ./composer.json:/var/www/html/composer.json
+      - ./composer.lock:/var/www/html/composer.lock
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-traffic_safety}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+    depends_on:
+      - postgres
+    networks:
+      - traffic-safety-network
+    command: tail -f /dev/null
+
+  php-fpm:
+    build:
+      context: .
+      dockerfile: Dockerfile.php-fpm
+    container_name: traffic-safety-php-fpm
+    working_dir: /var/www/html
+    volumes:
+      - ./src:/var/www/html/src
+      - ./tests:/var/www/html/tests
+      - ./vendor:/var/www/html/vendor
+      - ./composer.json:/var/www/html/composer.json
+      - ./composer.lock:/var/www/html/composer.lock
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-traffic_safety}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+    depends_on:
+      - postgres
+    networks:
+      - traffic-safety-network
+    ports:
+      - "9000:9000"
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: traffic-safety-postgres
+    environment:
+      - POSTGRES_DB=${DB_NAME:-traffic_safety}
+      - POSTGRES_USER=${DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    networks:
+      - traffic-safety-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+
+networks:
+  traffic-safety-network:
+    driver: bridge
+

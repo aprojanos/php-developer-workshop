@@ -2,6 +2,16 @@
 
 // Demo script for the refactored code
 require_once __DIR__ . '/../vendor/autoload.php';
+
+// Load environment variables from .env file if it exists (optional for Docker)
+use Dotenv\Dotenv;
+
+$envFile = __DIR__ . '/../.env';
+if (file_exists($envFile)) {
+    $dotenv = Dotenv::createImmutable(__DIR__ . '/..');
+    $dotenv->load();
+}
+
 // // Minimal PSR-4 autoloader for the App\ namespace
 // spl_autoload_register(function ($class) {
 //     $prefix = 'App\\';
@@ -21,23 +31,32 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 // Use declarations
 use App\Factory\AccidentFactory;
-use App\Repository\InMemoryAccidentRepository;
-use App\Repository\FileAccidentRepository;
+use App\Repository\PdoAccidentRepository;
 use App\Service\AccidentService;
-use App\Service\SimpleCostEstimator;
-use App\Service\AdvancedCostEstimator;
+use App\Service\SimpleCostCalculator;
 use App\Decorator\CachingAccidentRepositoryDecorator;
 use App\Report\CsvReportGenerator;
 use App\Logger\FileLogger;
 use App\Notifier\FileNotifier;
 
+// Create PostgreSQL PDO connection
+$dbHost = $_ENV['DB_HOST'] ?? 'localhost';
+$dbPort = $_ENV['DB_PORT'] ?? '5432';
+$dbName = $_ENV['DB_NAME'] ?? 'traffic_safety';
+$dbUser = $_ENV['DB_USER'] ?? 'postgres';
+$dbPassword = $_ENV['DB_PASSWORD'] ?? '';
+
+$dsn = "pgsql:host={$dbHost};port={$dbPort};dbname={$dbName}";
+$pdo = new PDO($dsn, $dbUser, $dbPassword, [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+]);
+
 $logger = new FileLogger(__DIR__ . '/storage/logs/app.log');
-// $notifier = new MailNotifier('safety@example.com', 'New accident notification');
 $notifier = new FileNotifier(__DIR__ . '/storage/logs/notifications.log');
-$repo = new FileAccidentRepository(__DIR__ . '/storage/data/accidents.csv');
-// $repo = new InMemoryAccidentRepository();
-$estimatorSimple = new SimpleCostEstimator();
-$serviceSimple = new AccidentService($repo, $estimatorSimple, $logger, $notifier);
+$repo = new PdoAccidentRepository($pdo);
+$costCalculator = new SimpleCostCalculator();
+$serviceSimple = new AccidentService($repo, $costCalculator, $logger, $notifier);
 
 $samples = [
     [
@@ -74,13 +93,12 @@ echo "Using SimpleCostEstimator:\n";
 echo "Total estimated cost: " . $serviceSimple->totalEstimatedCost() . "\n\n";
 
 // Now use Advanced estimator
-$repo2 = new InMemoryAccidentRepository();
+$repo2 = new PdoAccidentRepository($pdo);
 // copy items from previous repo for demo
 foreach ($repo->all() as $a) {
     $repo2->save($a);
 }
-$estimatorAdv = new AdvancedCostEstimator(1200.0);
-$serviceAdv = new AccidentService($repo2, $estimatorAdv);
+$serviceAdv = new AccidentService($repo2, $costCalculator);
 
 echo "Using AdvancedCostEstimator:\n";
 echo "Total estimated cost: " . $serviceAdv->totalEstimatedCost() . "\n\n";

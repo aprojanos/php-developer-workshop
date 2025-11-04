@@ -3,6 +3,15 @@ namespace App\Decorator;
 
 use App\Contract\AccidentRepositoryInterface;
 use App\Model\AccidentBase;
+use App\DTO\AccidentLocationDTO;
+use App\ValueObject\TimePeriod;
+use App\Enum\InjurySeverity;
+use App\Enum\AccidentType;
+use App\Enum\CollisionType;
+use App\Enum\CauseFactor;
+use App\Enum\WeatherCondition;
+use App\Enum\RoadCondition;
+use App\Enum\VisibilityCondition;
 
 /**
  * Simple caching decorator for AccidentRepositoryInterface.
@@ -57,6 +66,55 @@ final class CachingAccidentRepositoryDecorator implements AccidentRepositoryInte
         }
         // fallback to inner
         return $this->inner->findById($id);
+    }
+
+    public function update(AccidentBase $accident): void
+    {
+        $this->inner->update($accident);
+        $this->invalidate();
+    }
+
+    public function delete(int $id): void
+    {
+        $this->inner->delete($id);
+        $this->invalidate();
+    }
+
+    /** @return AccidentBase[] */
+    public function findByLocation(AccidentLocationDTO $location): array
+    {
+        // Delegate to inner repository
+        // Could potentially use cache, but would need more complex caching strategy
+        return $this->inner->findByLocation($location);
+    }
+
+    /** @return AccidentBase[] */
+    public function search(
+        ?TimePeriod $occurredAtInterval = null,
+        ?AccidentLocationDTO $location = null,
+        ?InjurySeverity $severity = null,
+        ?AccidentType $type = null,
+        ?CollisionType $collisionType = null,
+        ?CauseFactor $causeFactor = null,
+        ?WeatherCondition $weatherCondition = null,
+        ?RoadCondition $roadCondition = null,
+        ?VisibilityCondition $visibilityCondition = null,
+        ?int $injuredPersonsCount = null
+    ): array {
+        // Delegate to inner repository
+        // Could potentially use cache with complex key generation, but for simplicity delegate
+        return $this->inner->search(
+            $occurredAtInterval,
+            $location,
+            $severity,
+            $type,
+            $collisionType,
+            $causeFactor,
+            $weatherCondition,
+            $roadCondition,
+            $visibilityCondition,
+            $injuredPersonsCount
+        );
     }
 
     private function invalidate(): void
