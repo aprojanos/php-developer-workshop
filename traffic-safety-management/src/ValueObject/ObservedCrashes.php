@@ -4,99 +4,125 @@ namespace App\ValueObject;
 
 use App\Enum\AccidentType;
 
-final readonly class ObservedCrashes
+final readonly class ObservedCrashes implements \IteratorAggregate
 {
     /**
-     * @var array<AccidentType, int>
+     * @var array<int, array{type: AccidentType, count: int}>
      */
-    private array $crashes;
+    private array $entries;
 
     /**
-     * @param array<AccidentType, int>|array<string|AccidentType, int> $crashes
+     * @param array<string|AccidentType, int> $crashes
      */
     public function __construct(array $crashes)
     {
-        $validated = [];
+        $entries = [];
         foreach ($crashes as $type => $count) {
-            if (!$type instanceof AccidentType) {
-                throw new \InvalidArgumentException('All keys must be AccidentType instances');
+            $enum = null;
+            if ($type instanceof AccidentType) {
+                $enum = $type;
+            } elseif (is_string($type)) {
+                $enum = AccidentType::from($type);
             }
+
+            if ($enum === null) {
+                throw new \InvalidArgumentException('Observed crash keys must be AccidentType instances or strings.');
+            }
+
             if (!is_int($count) || $count < 0) {
-                throw new \InvalidArgumentException('All values must be non-negative integers');
+                throw new \InvalidArgumentException('Observed crash counts must be non-negative integers.');
             }
-            $validated[$type] = $count;
+
+            $entries[] = [
+                'type' => $enum,
+                'count' => $count,
+            ];
         }
-        $this->crashes = $validated;
+
+        $this->entries = $entries;
     }
 
-    /**
-     * Get the count for a specific accident type.
-     */
     public function getCount(AccidentType $type): int
     {
-        return $this->crashes[$type] ?? 0;
+        foreach ($this->entries as $entry) {
+            if ($entry['type'] === $type) {
+                return $entry['count'];
+            }
+        }
+
+        return 0;
     }
 
-    /**
-     * Check if a specific accident type has crashes recorded.
-     */
     public function hasType(AccidentType $type): bool
     {
-        return isset($this->crashes[$type]);
+        foreach ($this->entries as $entry) {
+            if ($entry['type'] === $type) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
-     * Get all accident types that have crashes recorded.
-     *
      * @return array<AccidentType>
      */
     public function getTypes(): array
     {
-        return array_keys($this->crashes);
+        return array_map(fn (array $entry) => $entry['type'], $this->entries);
     }
 
-    /**
-     * Get the total count of all crashes.
-     */
     public function getTotalCount(): int
     {
-        return array_sum($this->crashes);
+        return array_sum(array_map(fn (array $entry) => $entry['count'], $this->entries));
     }
 
     /**
-     * Get the crashes as an array.
-     *
-     * @return array<AccidentType, int>
+     * @return array<string, int>
      */
     public function toArray(): array
     {
-        return $this->crashes;
+        return $this->toStringIndexedArray();
     }
 
     /**
-     * Check if there are any crashes recorded.
+     * @return array<string, int>
      */
+    public function toStringIndexedArray(): array
+    {
+        $result = [];
+        foreach ($this->entries as $entry) {
+            $result[$entry['type']->value] = $entry['count'];
+        }
+        return $result;
+    }
+
+    /**
+     * @return array<int, array{type: AccidentType, count: int}>
+     */
+    public function toTypeCountPairs(): array
+    {
+        return $this->entries;
+    }
+
     public function isEmpty(): bool
     {
-        return empty($this->crashes);
+        return empty($this->entries);
     }
 
-    /**
-     * Get the count of different accident types.
-     */
     public function count(): int
     {
-        return count($this->crashes);
+        return count($this->entries);
     }
 
     /**
-     * Iterate over crashes.
-     *
-     * @return \Traversable<AccidentType, int>
+     * @return \Traversable<string, int>
      */
     public function getIterator(): \Traversable
     {
-        return new \ArrayIterator($this->crashes);
+        foreach ($this->entries as $entry) {
+            yield $entry['type']->value => $entry['count'];
+        }
     }
 }
 

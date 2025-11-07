@@ -188,8 +188,8 @@ final class PdoHotspotRepository implements HotspotRepositoryInterface
         );
 
         $observedCrashesData = json_decode($row['observed_crashes'] ?? '{}', true) ?: [];
-        $screeningParameters = !empty($row['screening_parameters']) 
-            ? json_decode($row['screening_parameters'], true) 
+        $screeningParameters = !empty($row['screening_parameters'])
+            ? json_decode($row['screening_parameters'], true)
             : null;
 
         return HotspotFactory::create([
@@ -272,7 +272,7 @@ final class PdoHotspotRepository implements HotspotRepositoryInterface
     {
         $data = [];
         foreach ($observedCrashes->toArray() as $type => $count) {
-            $data[$type->value] = $count;
+            $data[$type] = $count;
         }
         return json_encode($data);
     }

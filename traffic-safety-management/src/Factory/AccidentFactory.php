@@ -22,20 +22,24 @@ final class AccidentFactory
             $location = self::createLocationFromData($data);
         }
         
+        $injuredPersonsCount = isset($data['injuredPersonsCount']) ? (int)$data['injuredPersonsCount'] : 0;
+
         return match ($type) {
             AccidentType::INJURY => new AccidentInjury(
                 id: $id,
                 occurredAt: new \DateTimeImmutable($data['occurredAt'] ?? 'now'),
                 location: $location,
-                severity: !empty($data['severity']) ? InjurySeverity::from($data['severity']) : InjurySeverity::MINOR,
                 cost: (float)($data['cost'] ?? 0),
+                severity: !empty($data['severity']) ? InjurySeverity::from($data['severity']) : InjurySeverity::MINOR,
+                injuredPersonsCount: max(0, $injuredPersonsCount),
             ),
             AccidentType::PDO => new AccidentPDO(
                 id: $id,
                 occurredAt: new \DateTimeImmutable($data['occurredAt'] ?? 'now'),
                 location: $location,
-                severity: null,
                 cost: (float)($data['cost'] ?? 0),
+                severity: null,
+                injuredPersonsCount: 0,
             ),
         };
     }

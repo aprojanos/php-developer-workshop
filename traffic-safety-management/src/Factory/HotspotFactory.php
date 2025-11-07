@@ -30,7 +30,8 @@ final class HotspotFactory
     {
         $observedCrashes = [];
         foreach ($crashesData as $type => $count) {
-            $observedCrashes[AccidentType::from($type)] = (int)$count;
+            $enum = $type instanceof AccidentType ? $type : AccidentType::from((string)$type);
+            $observedCrashes[$enum->value] = (int)$count;
         }
         return new ObservedCrashes($observedCrashes);
     }
