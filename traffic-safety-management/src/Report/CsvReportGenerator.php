@@ -40,7 +40,7 @@ final class CsvReportGenerator extends AbstractReportGenerator
             $row = [
                 $item->id ?? '',
                 $item->occurredAt->format('c') ?? '',
-                str_replace('\n', ' ', $item->location ?? ''),
+                $item->location->latitude . ' - ' . $item->location->longitude,
                 $item->severity->value ?? '',
                 $item->type->value ?? '',
                 $item->cost ?? '',

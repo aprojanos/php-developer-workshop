@@ -37,7 +37,7 @@ final class AccidentSeeder
         $this->seedAccidents('Injury', $injuryCount);
     }
 
-    private function purge(): void
+    public function purge(): void
     {
         $this->pdo->exec('DELETE FROM accidents');
     }

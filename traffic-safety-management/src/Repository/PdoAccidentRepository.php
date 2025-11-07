@@ -21,8 +21,8 @@ final class PdoAccidentRepository implements AccidentRepositoryInterface
 
     public function save(AccidentBase $accident): void
     {
-        $stmt = $this->pdo->prepare('INSERT INTO accidents (id, occurred_at, location, severity, type, cost, road_segment_id, intersection_id)
-            VALUES (:id,:occurred_at,:location,:severity,:type,:cost,:road_segment_id,:intersection_id)');
+        $stmt = $this->pdo->prepare('INSERT INTO accidents (id, occurred_at, location, severity, type, cost, road_segment_id, intersection_id, distance_from_start)
+            VALUES (:id,:occurred_at,:location,:severity,:type,:cost,:road_segment_id,:intersection_id,:distance_from_start)');
         $stmt->execute([
             'id' => $accident->id,
             'occurred_at' => $accident->occurredAt->format('c'),
@@ -32,6 +32,7 @@ final class PdoAccidentRepository implements AccidentRepositoryInterface
             'cost' => $accident->cost,
             'road_segment_id' => $accident->location->getRoadSegmentId(),
             'intersection_id' => $accident->location->getIntersectionId(),
+            'distance_from_start' => $accident->location->distanceFromStart,
         ]);
     }
 
@@ -44,7 +45,8 @@ final class PdoAccidentRepository implements AccidentRepositoryInterface
             $location = $this->wktToLocation(
                 $r['location'],
                 $r['road_segment_id'],
-                $r['intersection_id']
+                $r['intersection_id'],
+                $r['distance_from_start']
             );
             $result[] = AccidentFactory::create([
                 'id' => (int)$r['id'],
@@ -54,6 +56,7 @@ final class PdoAccidentRepository implements AccidentRepositoryInterface
                 'cost' => (float)$r['cost'],
                 'roadSegmentId' => $r['road_segment_id'] !== null ? (int)$r['road_segment_id'] : null,
                 'intersectionId' => $r['intersection_id'] !== null ? (int)$r['intersection_id'] : null,
+                'distanceFromStart' => $r['distance_from_start'] !== null ? (float)$r['distance_from_start'] : null,
             ]);
         }
         return $result;
@@ -70,7 +73,8 @@ final class PdoAccidentRepository implements AccidentRepositoryInterface
         $location = $this->wktToLocation(
             $r['location'],
             $r['road_segment_id'],
-            $r['intersection_id']
+            $r['intersection_id'],
+            $r['distance_from_start']
         );
         return AccidentFactory::create([
             'id' => (int)$r['id'],
@@ -80,6 +84,7 @@ final class PdoAccidentRepository implements AccidentRepositoryInterface
             'cost' => (float)$r['cost'],
             'roadSegmentId' => $r['road_segment_id'] !== null ? (int)$r['road_segment_id'] : null,
             'intersectionId' => $r['intersection_id'] !== null ? (int)$r['intersection_id'] : null,
+            'distanceFromStart' => $r['distance_from_start'] !== null ? (float)$r['distance_from_start'] : null,
         ]);
     }
 
@@ -93,6 +98,7 @@ final class PdoAccidentRepository implements AccidentRepositoryInterface
                 cost = :cost,
                 road_segment_id = :road_segment_id,
                 intersection_id = :intersection_id
+                distance_from_start = :distance_from_start
             WHERE id = :id');
         $stmt->execute([
             'id' => $accident->id,
@@ -103,6 +109,7 @@ final class PdoAccidentRepository implements AccidentRepositoryInterface
             'cost' => $accident->cost,
             'road_segment_id' => $accident->location->getRoadSegmentId(),
             'intersection_id' => $accident->location->getIntersectionId(),
+            'distance_from_start' => $accident->location->distanceFromStart,
         ]);
     }
 
@@ -128,7 +135,8 @@ final class PdoAccidentRepository implements AccidentRepositoryInterface
             $accidentLocation = $this->wktToLocation(
                 $r['location'],
                 $r['road_segment_id'],
-                $r['intersection_id']
+                $r['intersection_id'],
+                $r['distance_from_start']
             );
             $result[] = AccidentFactory::create([
                 'id' => (int)$r['id'],
@@ -239,7 +247,8 @@ final class PdoAccidentRepository implements AccidentRepositoryInterface
             $accidentLocation = $this->wktToLocation(
                 $r['location'],
                 $r['road_segment_id'],
-                $r['intersection_id']
+                $r['intersection_id'],
+                $r['distance_from_start']
             );
             $result[] = AccidentFactory::create([
                 'id' => (int)$r['id'],
@@ -267,7 +276,7 @@ final class PdoAccidentRepository implements AccidentRepositoryInterface
      * Convert WKT format to AccidentLocationDTO.
      * WKT format: POINT(longitude latitude)
      */
-    private function wktToLocation(string $wkt, ?string $roadSegmentId, ?string $intersectionId): AccidentLocationDTO
+    private function wktToLocation(string $wkt, ?string $roadSegmentId, ?string $intersectionId, ?float $distanceFromStart = null): AccidentLocationDTO
     {
         // Parse WKT POINT format: POINT(longitude latitude)
         if (!preg_match('/POINT\s*\(\s*([+-]?\d+\.?\d*)\s+([+-]?\d+\.?\d*)\s*\)/i', $wkt, $matches)) {
@@ -286,7 +295,7 @@ final class PdoAccidentRepository implements AccidentRepositoryInterface
             locationId: $locationId,
             latitude: $latitude,
             longitude: $longitude,
-            distanceFromStart: null // Will be populated if needed elsewhere
+            distanceFromStart: $distanceFromStart
         );
     }
 }

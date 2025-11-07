@@ -32,7 +32,7 @@ $pdo = new PDO($dsn, $dbUser, $dbPassword, [
 ]);
 
 $options = getopt('', ['count::', 'intersection-share::', 'no-purge']);
-$count = isset($options['count']) ? max(1, (int)$options['count']) : 10;
+$count = isset($options['count']) ? (int)$options['count'] : 10;
 $intersectionShare = isset($options['intersection-share'])
     ? max(0.0, min(1.0, (float)$options['intersection-share']))
     : 0.5;
@@ -46,7 +46,12 @@ $hotspotRepository = new PdoHotspotRepository($pdo);
 $hotspotService = new HotspotService($hotspotRepository, $accidentService, $hotspotLogger);
 
 $seeder = new HotspotSeeder($hotspotService, $pdo);
-$seeder->run($count, $purge, $intersectionShare);
+if ($purge) {
+    $seeder->purge();
+}
+if ($count > 0) {
+    $seeder->run($count, $purge, $intersectionShare);
+}
 
 echo "Seeded {$count} hotspots." . PHP_EOL;
 

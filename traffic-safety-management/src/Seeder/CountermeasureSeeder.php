@@ -59,7 +59,7 @@ final class CountermeasureSeeder
         $this->seedRoadSegmentCountermeasures($roadSegmentCount);
     }
 
-    private function purge(): void
+    public function purge(): void
     {
         $this->pdo->exec('DELETE FROM countermeasures');
     }

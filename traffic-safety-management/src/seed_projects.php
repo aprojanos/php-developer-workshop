@@ -26,10 +26,15 @@ $pdo = new PDO($dsn, $dbUser, $dbPassword, [
 ]);
 
 $options = getopt('', ['count::', 'no-purge']);
-$count = isset($options['count']) ? max(1, (int)$options['count']) : 5;
+$count = isset($options['count']) ? (int)$options['count'] : 5;
 $purge = !isset($options['no-purge']);
 
 $seeder = new ProjectSeeder($pdo);
-$seeder->run($count, $purge);
+if ($purge) {
+    $seeder->purge();
+}
+if ($count > 0) {
+    $seeder->run($count, $purge);
+}
 
 echo "Seeded {$count} projects." . PHP_EOL;

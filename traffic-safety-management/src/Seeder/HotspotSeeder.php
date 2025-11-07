@@ -58,7 +58,7 @@ final class HotspotSeeder
         $this->seedHotspots($count);
     }
 
-    private function purge(): void
+    public function purge(): void
     {
         $this->pdo->exec('DELETE FROM hotspots');
     }

@@ -142,7 +142,7 @@ final class HotspotService
     }
 
     /**
-     * Detect hotspots based on accident cost threshold
+     * Screening for hotspots based on accident cost threshold
      * Calculates the sum of estimated costs for all accidents on each road element
      * and returns elements with scores above the threshold
      *
@@ -150,7 +150,7 @@ final class HotspotService
      * @param LocationType|string $type Location type ('roadsegment' or 'intersection')
      * @return array<int, array{locationId: int, score: float, accidentCount: int}> Array of detected hotspots with location ID, score, and accident count
      */
-    public function detectHotspot(float $threshold, LocationType|string $type): array
+    public function screeningForHotspots(float $threshold, LocationType|string $type): array
     {
         // Convert string to enum if needed
         $locationType = $type instanceof LocationType ? $type : LocationType::from(strtolower($type));
