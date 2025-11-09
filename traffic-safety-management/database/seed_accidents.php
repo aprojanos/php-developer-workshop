@@ -30,8 +30,8 @@ $pdo = new PDO($dsn, $dbUser, $dbPassword, [
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
 ]);
 
-$logger = new FileLogger(__DIR__ . '/storage/logs/seed.log');
-$notifier = new FileNotifier(__DIR__ . '/storage/logs/seed_notifications.log');
+$logger = new FileLogger(__DIR__ . '/../storage/logs/seed.log');
+$notifier = new FileNotifier(__DIR__ . '/../storage/logs/seed_notifications.log');
 $repository = new PdoAccidentRepository($pdo);
 $costCalculator = new SimpleCostCalculator();
 $service = new AccidentService($repository, $costCalculator, $logger, $notifier);

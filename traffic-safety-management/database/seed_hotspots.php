@@ -41,7 +41,7 @@ $purge = !isset($options['no-purge']);
 $accidentRepository = new PdoAccidentRepository($pdo);
 $accidentService = new AccidentService($accidentRepository, new SimpleCostCalculator());
 
-$hotspotLogger = new FileLogger(__DIR__ . '/storage/logs/seed_hotspots.log');
+$hotspotLogger = new FileLogger(__DIR__ . '/../storage/logs/seed_hotspots.log');
 $hotspotRepository = new PdoHotspotRepository($pdo);
 $hotspotService = new HotspotService($hotspotRepository, $accidentService, $hotspotLogger);
 

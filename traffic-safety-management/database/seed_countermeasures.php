@@ -33,7 +33,7 @@ $intersectionCount = isset($options['intersection']) ? max(0, (int)$options['int
 $roadCount = isset($options['road']) ? max(0, (int)$options['road']) : 5;
 $purge = !isset($options['no-purge']);
 
-$logger = new FileLogger(__DIR__ . '/storage/logs/seed_countermeasures.log');
+$logger = new FileLogger(__DIR__ . '/../storage/logs/seed_countermeasures.log');
 $repository = new PdoCountermeasureRepository($pdo);
 $service = new CountermeasureService($repository, $logger);
 $seeder = new CountermeasureSeeder($service, $pdo);
