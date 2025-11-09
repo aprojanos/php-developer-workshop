@@ -5,10 +5,14 @@ use App\Contract\HotspotRepositoryInterface;
 use App\Contract\LoggerInterface;
 use App\Model\Hotspot;
 use App\DTO\HotspotSearchDTO;
+use App\DTO\HotspotScreeningDTO;
 use App\Enum\HotspotStatus;
 use App\Service\AccidentService;
 use App\Enum\LocationType;
 use App\Model\AccidentBase;
+use App\Model\Intersection;
+use App\Model\RoadSegment;
+use App\ValueObject\TimePeriod;
 
 final class HotspotService
 {
@@ -146,14 +150,12 @@ final class HotspotService
      * Calculates the sum of estimated costs for all accidents on each road element
      * and returns elements with scores above the threshold
      *
-     * @param float $threshold Minimum score (total cost) to be considered a hotspot
-     * @param LocationType|string $type Location type ('roadsegment' or 'intersection')
+     * @param HotspotScreeningDTO $dto Screening parameters
      * @return array<int, array{locationId: int, score: float, accidentCount: int}> Array of detected hotspots with location ID, score, and accident count
      */
-    public function screeningForHotspots(float $threshold, LocationType|string $type): array
+    public function screeningForHotspots(HotspotScreeningDTO $dto): array
     {
-        // Convert string to enum if needed
-        $locationType = $type instanceof LocationType ? $type : LocationType::from(strtolower($type));
+        $locationType = $dto->locationType;
 
         // Get all accidents from the accident service
         $allAccidents = $this->accidentService->all();
@@ -161,8 +163,11 @@ final class HotspotService
         // Filter accidents by location type
         $filteredAccidents = array_filter(
             $allAccidents,
-            fn(AccidentBase $accident) => $accident->location->locationType === $locationType
+            fn(AccidentBase $accident) => $this->isAccidentEligible($accident, $locationType, $dto->period)
         );
+
+        $existingHotspots = $this->repository->all();
+        [$existingRoadSegments, $existingIntersections] = $this->partitionExistingHotspots($existingHotspots);
 
         // Group accidents by location ID
         $accidentsByLocation = [];
@@ -181,11 +186,69 @@ final class HotspotService
             $accidentsByLocation[$locationId][] = $accident;
         }
 
-        // Calculate score (total cost) for each location and filter by threshold
+        $hotspots = $this->computeHotspotCandidates(
+            $accidentsByLocation,
+            $locationType,
+            $dto->threshold,
+            $existingRoadSegments,
+            $existingIntersections
+        );
+
+        $this->logger?->info('Hotspot detection performed', [
+            'threshold' => $dto->threshold,
+            'type' => $locationType->value,
+            'period' => $dto->period
+                ? [
+                    'start' => $dto->period->startDate->format('c'),
+                    'end' => $dto->period->endDate->format('c'),
+                ]
+                : null,
+            'totalAccidentsAnalyzed' => count($filteredAccidents),
+            'locationsAnalyzed' => count($accidentsByLocation),
+            'hotspotsDetected' => count($hotspots),
+        ]);
+
+        return $hotspots;
+    }
+
+    private function isAccidentEligible(AccidentBase $accident, LocationType $locationType, ?TimePeriod $period): bool
+    {
+        if ($accident->location->locationType !== $locationType) {
+            return false;
+        }
+
+        if ($period !== null && !$period->contains($accident->occurredAt)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * @param array<int, array<int, AccidentBase>> $accidentsByLocation
+     * @param array<int, true> $existingRoadSegments
+     * @param array<int, true> $existingIntersections
+     * @return array<int, array{locationId: int, score: float, accidentCount: int}>
+     */
+    private function computeHotspotCandidates(
+        array $accidentsByLocation,
+        LocationType $locationType,
+        float $threshold,
+        array $existingRoadSegments,
+        array $existingIntersections
+    ): array {
         $hotspots = [];
+
         foreach ($accidentsByLocation as $locationId => $accidents) {
             $score = $this->accidentService->calculateTotalCost($accidents);
-            
+
+            if (
+                ($locationType === LocationType::ROADSEGMENT && isset($existingRoadSegments[$locationId]))
+                || ($locationType === LocationType::INTERSECTION && isset($existingIntersections[$locationId]))
+            ) {
+                continue;
+            }
+
             if ($score > $threshold) {
                 $hotspots[$locationId] = [
                     'locationId' => $locationId,
@@ -195,18 +258,29 @@ final class HotspotService
             }
         }
 
-        // Sort by score descending (highest scores first)
         usort($hotspots, fn($a, $b) => $b['score'] <=> $a['score']);
 
-        $this->logger?->info('Hotspot detection performed', [
-            'threshold' => $threshold,
-            'type' => $locationType->value,
-            'totalAccidentsAnalyzed' => count($filteredAccidents),
-            'locationsAnalyzed' => count($accidentsByLocation),
-            'hotspotsDetected' => count($hotspots),
-        ]);
-
         return $hotspots;
+    }
+
+    /**
+     * @param Hotspot[] $hotspots
+     * @return array{array<int, true>, array<int, true>}
+     */
+    private function partitionExistingHotspots(array $hotspots): array
+    {
+        $roadSegments = [];
+        $intersections = [];
+
+        foreach ($hotspots as $hotspot) {
+            if ($hotspot->location instanceof RoadSegment) {
+                $roadSegments[$hotspot->location->id] = true;
+            } elseif ($hotspot->location instanceof Intersection) {
+                $intersections[$hotspot->location->id] = true;
+            }
+        }
+
+        return [$roadSegments, $intersections];
     }
 
     /**

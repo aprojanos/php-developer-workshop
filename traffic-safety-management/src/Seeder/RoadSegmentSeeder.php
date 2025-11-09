@@ -2,12 +2,20 @@
 
 namespace App\Seeder;
 
+use App\Contract\RoadSegmentRepositoryInterface;
 use App\Enum\FunctionalClass;
+use App\Model\RoadSegment;
+use App\ValueObject\GeoLocation;
 
 final class RoadSegmentSeeder
 {
-    public function __construct(private readonly \PDO $pdo)
-    {
+    private int $nextId;
+
+    public function __construct(
+        private readonly \PDO $pdo,
+        private readonly RoadSegmentRepositoryInterface $repository,
+    ) {
+        $this->nextId = $this->fetchMaxId();
     }
 
     public function run(int $count = 10, bool $purgeExisting = true): void
@@ -18,6 +26,7 @@ final class RoadSegmentSeeder
 
         if ($purgeExisting) {
             $this->purge();
+            $this->nextId = 0;
         }
 
         $this->seed($count);
@@ -36,57 +45,54 @@ final class RoadSegmentSeeder
         $roadNames = ['Kossuth', 'Petőfi', 'Széchenyi', 'Rákóczi', 'Budaörsi', 'Váci', 'Andrássy'];
         $suffixes = ['út', 'utca', 'körút', 'fasor', 'sor'];
 
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO road_segments (
-                code,
-                length_km,
-                lane_count,
-                functional_class,
-                speed_limit_kmh,
-                aadt,
-                geo_location,
-                city,
-                street
-            ) VALUES (
-                :code,
-                :length_km,
-                :lane_count,
-                :functional_class,
-                :speed_limit_kmh,
-                :aadt,
-                :geo_location,
-                :city,
-                :street
-            )'
-        );
-
         for ($i = 0; $i < $count; $i++) {
             $functionalClass = $functionalClasses[$i % $classCount];
+            $roadSegment = $this->createRoadSegment(
+                index: $i,
+                functionalClass: $functionalClass,
+                city: $cities[$i % count($cities)],
+                streetName: sprintf('%s %s', $roadNames[$i % count($roadNames)], $suffixes[$i % count($suffixes)])
+            );
 
-            $payload = [
-                'code' => sprintf('SEG-%03d', $i + 1),
-                'length_km' => $this->randomLengthKm($functionalClass),
-                'lane_count' => $this->randomLaneCount($functionalClass),
-                'functional_class' => $functionalClass->value,
-                'speed_limit_kmh' => $this->randomSpeedLimit($functionalClass),
-                'aadt' => $this->randomAadt($functionalClass),
-                'geo_location' => $this->randomPointWkt(),
-                'city' => $cities[$i % count($cities)],
-                'street' => sprintf('%s %s', $roadNames[$i % count($roadNames)], $suffixes[$i % count($suffixes)]),
-            ];
-
-            $stmt->execute([
-                'code' => $payload['code'],
-                'length_km' => $payload['length_km'],
-                'lane_count' => $payload['lane_count'],
-                'functional_class' => $payload['functional_class'],
-                'speed_limit_kmh' => $payload['speed_limit_kmh'],
-                'aadt' => $payload['aadt'],
-                'geo_location' => $payload['geo_location'],
-                'city' => $payload['city'],
-                'street' => $payload['street'],
-            ]);
+            $this->repository->save($roadSegment);
         }
+    }
+
+    private function createRoadSegment(
+        int $index,
+        FunctionalClass $functionalClass,
+        string $city,
+        string $streetName
+    ): RoadSegment {
+        return new RoadSegment(
+            id: $this->generateId(),
+            code: sprintf('SEG-%03d', $index + 1),
+            lengthKm: $this->randomLengthKm($functionalClass),
+            laneCount: $this->randomLaneCount($functionalClass),
+            functionalClass: $functionalClass,
+            speedLimitKmh: $this->randomSpeedLimit($functionalClass),
+            aadt: $this->randomAadt($functionalClass),
+            geoLocation: new GeoLocation(
+                wkt: $this->randomPointWkt(),
+                city: $city,
+                street: $streetName,
+            ),
+        );
+    }
+
+    private function fetchMaxId(): int
+    {
+        $stmt = $this->pdo->query('SELECT COALESCE(MAX(id), 0) FROM road_segments');
+        $result = $stmt !== false ? $stmt->fetchColumn() : 0;
+
+        return (int)$result;
+    }
+
+    private function generateId(): int
+    {
+        $this->nextId++;
+
+        return $this->nextId;
     }
 
     private function randomLengthKm(FunctionalClass $functionalClass): float

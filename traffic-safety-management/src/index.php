@@ -30,7 +30,6 @@ if (file_exists($envFile)) {
 // });
 
 // Use declarations
-use App\Factory\AccidentFactory;
 use App\Repository\PdoAccidentRepository;
 use App\Service\AccidentService;
 use App\Service\SimpleCostCalculator;
@@ -44,6 +43,15 @@ use App\DTO\AccidentLocationDTO;
 use App\Enum\LocationType;
 use App\Service\HotspotService;
 use App\Repository\PdoHotspotRepository;
+use App\DTO\HotspotScreeningDTO;
+use App\Model\Intersection;
+use App\Model\RoadSegment;
+use App\Model\Hotspot;
+use App\Repository\PdoIntersectionRepository;
+use App\Repository\PdoRoadSegmentRepository;
+use App\Enum\HotspotStatus;
+use App\Enum\AccidentType;
+use App\Factory\HotspotFactory;
 
 // Create PostgreSQL PDO connection
 $dbHost = $_ENV['DB_HOST'] ?? 'localhost';
@@ -110,16 +118,106 @@ foreach ($accidents as $accident) {
 // screening for hotspots
 $hotspotRepository  = new PdoHotspotRepository($pdo);
 $hotspotService = new HotspotService($hotspotRepository, $accidentService, $logger);
-echo "Screening for ROADSEGMENT hotspots...\n";
-$possibleHotspots = $hotspotService->screeningForHotspots(30000, LocationType::ROADSEGMENT);
-echo "Found " . count($possibleHotspots) . " possible ROADSEGMENT hotspots.\n";
-foreach ($possibleHotspots as $possibleHotspot) {
-    echo implode(' - ', $possibleHotspot) . "\n";
+$intersectionRepository = new PdoIntersectionRepository($pdo);
+$roadSegmentRepository = new PdoRoadSegmentRepository($pdo);
+
+$existingHotspots = $hotspotRepository->all();
+$nextHotspotId = empty($existingHotspots)
+    ? 1
+    : (max(array_map(static fn (Hotspot $hotspot) => $hotspot->id, $existingHotspots)) + 1);
+
+// perform screening for hotspots and create hotspots for the to 1 by location type
+
+foreach (LocationType::cases() as $locationType) {
+    echo "Screening for {$locationType->value} hotspots...\n";
+    $screeningDto = new HotspotScreeningDTO(
+        locationType: $locationType,
+        threshold: 1000,
+        period: new TimePeriod(
+            startDate: new \DateTimeImmutable('2025-10-01'),
+            endDate: new \DateTimeImmutable('2025-10-31')
+        ),
+    );
+    $possibleHotspots = $hotspotService->screeningForHotspots($screeningDto);
+    echo "Found " . count($possibleHotspots) . " possible {$locationType->value} hotspots.\n";
+    $first = true;
+    foreach ($possibleHotspots as $possibleHotspot) {
+        echo implode(' - ', $possibleHotspot) . "\n";
+        if ($first) {
+            $first = false;
+            $locationId = $possibleHotspot['locationId'];
+
+            $alreadyExists = array_filter(
+                $existingHotspots,
+                static function (Hotspot $hotspot) use ($locationType, $locationId): bool {
+                    return match ($locationType) {
+                        LocationType::ROADSEGMENT => $hotspot->location instanceof RoadSegment
+                            && $hotspot->location->id === $locationId,
+                        LocationType::INTERSECTION => $hotspot->location instanceof Intersection
+                            && $hotspot->location->id === $locationId,
+                    };
+                }
+            );
+
+            if (!empty($alreadyExists)) {
+                echo "Hotspot already exists for location {$locationId}, skipping creation.\n";
+                continue;
+            }
+
+            $location = match ($locationType) {
+                LocationType::ROADSEGMENT => $roadSegmentRepository->findById($locationId),
+                LocationType::INTERSECTION => $intersectionRepository->findById($locationId),
+            };
+
+            if ($location === null) {
+                echo "Unable to load {$locationType->value} {$locationId}; hotspot not created.\n";
+                continue;
+            }
+
+            $period = $screeningDto->period ?? new TimePeriod(
+                startDate: new \DateTimeImmutable('-1 year'),
+                endDate: new \DateTimeImmutable(),
+            );
+
+            $injuryCrashes = (int) round($possibleHotspot['accidentCount'] * 0.3);
+            $injuryCrashes = min($injuryCrashes, $possibleHotspot['accidentCount']);
+            $pdoCrashes = max(0, $possibleHotspot['accidentCount'] - $injuryCrashes);
+
+            if ($pdoCrashes === 0 && $injuryCrashes === 0) {
+                $pdoCrashes = $possibleHotspot['accidentCount'];
+            }
+
+            $expectedCrashes = max(1, round($possibleHotspot['accidentCount'] * 0.8, 2));
+
+            $hotspotData = [
+                'id' => $nextHotspotId++,
+                'location' => $location,
+                'period_start' => $period->startDate->format(DATE_ATOM),
+                'period_end' => $period->endDate->format(DATE_ATOM),
+                'observed_crashes' => [
+                    AccidentType::PDO->value => $pdoCrashes,
+                    AccidentType::INJURY->value => $injuryCrashes,
+                ],
+                'expected_crashes' => $expectedCrashes,
+                'risk_score' => (float) $possibleHotspot['score'],
+                'status' => HotspotStatus::OPEN->value,
+                'screening_parameters' => [
+                    'source' => 'index-demo',
+                    'threshold' => $screeningDto->threshold,
+                    'accidentCount' => $possibleHotspot['accidentCount'],
+                    'calculatedAt' => (new \DateTimeImmutable())->format(DATE_ATOM),
+                    'locationType' => $locationType->value,
+                ],
+            ];
+
+            $newHotspot = HotspotFactory::create($hotspotData);
+            $hotspotService->create($newHotspot);
+            $existingHotspots[] = $newHotspot;
+
+            echo "Hotspot created with ID {$newHotspot->id}\n";
+        }
+    }
 }
-$possibleHotspots = $hotspotService->screeningForHotspots(20000, LocationType::INTERSECTION);
-echo "Found " . count($possibleHotspots) . " possible INTERSECTION hotspots.\n";
-foreach ($possibleHotspots as $possibleHotspot) {
-    echo implode(' - ', $possibleHotspot) . "\n";
-}
+
 
 echo "Done.\n";

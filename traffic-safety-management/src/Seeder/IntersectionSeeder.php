@@ -2,12 +2,20 @@
 
 namespace App\Seeder;
 
+use App\Contract\IntersectionRepositoryInterface;
 use App\Enum\IntersectionControlType;
+use App\Model\Intersection;
+use App\ValueObject\GeoLocation;
 
 final class IntersectionSeeder
 {
-    public function __construct(private readonly \PDO $pdo)
-    {
+    private int $nextId;
+
+    public function __construct(
+        private readonly \PDO $pdo,
+        private readonly IntersectionRepositoryInterface $repository,
+    ) {
+        $this->nextId = $this->fetchMaxId();
     }
 
     public function run(int $count = 10, bool $purgeExisting = true): void
@@ -18,6 +26,7 @@ final class IntersectionSeeder
 
         if ($purgeExisting) {
             $this->purge();
+            $this->nextId = 0;
         }
 
         $this->seed($count);
@@ -36,30 +45,6 @@ final class IntersectionSeeder
         $streetPrefixes = ['Kossuth', 'Petőfi', 'Széchenyi', 'Rákóczi', 'Bajcsy'];
         $streetSuffixes = ['út', 'utca', 'körút', 'tér', 'sétány'];
 
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO intersections (
-                code,
-                control_type,
-                number_of_legs,
-                has_cameras,
-                aadt,
-                spf_model_reference,
-                geo_location,
-                city,
-                street
-            ) VALUES (
-                :code,
-                :control_type,
-                :number_of_legs,
-                :has_cameras,
-                :aadt,
-                :spf_model_reference,
-                :geo_location,
-                :city,
-                :street
-            )'
-        );
-
         for ($i = 0; $i < $count; $i++) {
             $controlType = $controlTypes[$i % $controlTypeCount];
             $city = $cities[$i % count($cities)];
@@ -71,30 +56,52 @@ final class IntersectionSeeder
                 $streetSuffixes[($i + 2) % count($streetSuffixes)]
             );
 
-            $payload = [
-                'code' => sprintf('INT-%03d', $i + 1),
-                'control_type' => $controlType->value,
-                'number_of_legs' => $this->randomNumberOfLegs($controlType),
-                'has_cameras' => $this->randomHasCameras($controlType),
-                'aadt' => random_int(3500, 45000),
-                'spf_model_reference' => $this->generateSpfModelReference($controlType, $i),
-                'geo_location' => $this->randomPointWkt(),
-                'city' => $city,
-                'street' => $street,
-            ];
+            $intersection = $this->createIntersection(
+                index: $i,
+                controlType: $controlType,
+                city: $city,
+                street: $street
+            );
 
-            $stmt->execute([
-                'code' => $payload['code'],
-                'control_type' => $payload['control_type'],
-                'number_of_legs' => $payload['number_of_legs'],
-                'has_cameras' => $payload['has_cameras'] ? 'true' : 'false',
-                'aadt' => $payload['aadt'],
-                'spf_model_reference' => $payload['spf_model_reference'],
-                'geo_location' => $payload['geo_location'],
-                'city' => $payload['city'],
-                'street' => $payload['street'],
-            ]);
+            $this->repository->save($intersection);
         }
+    }
+
+    private function createIntersection(
+        int $index,
+        IntersectionControlType $controlType,
+        string $city,
+        string $street
+    ): Intersection {
+        return new Intersection(
+            id: $this->generateId(),
+            code: sprintf('INT-%03d', $index + 1),
+            controlType: $controlType,
+            numberOfLegs: $this->randomNumberOfLegs($controlType),
+            hasCameras: $this->randomHasCameras($controlType),
+            aadt: random_int(3500, 45000),
+            spfModelReference: $this->generateSpfModelReference($controlType, $index),
+            geoLocation: new GeoLocation(
+                wkt: $this->randomPointWkt(),
+                city: $city,
+                street: $street,
+            ),
+        );
+    }
+
+    private function fetchMaxId(): int
+    {
+        $stmt = $this->pdo->query('SELECT COALESCE(MAX(id), 0) FROM intersections');
+        $result = $stmt !== false ? $stmt->fetchColumn() : 0;
+
+        return (int)$result;
+    }
+
+    private function generateId(): int
+    {
+        $this->nextId++;
+
+        return $this->nextId;
     }
 
     private function randomNumberOfLegs(IntersectionControlType $controlType): int

@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-use App\Seeder\IntersectionSeeder;
+use App\Repository\PdoRoadSegmentRepository;
+use App\Seeder\RoadSegmentSeeder;
 use Dotenv\Dotenv;
 
 $envFile = __DIR__ . '/../.env';
@@ -29,9 +30,10 @@ $options = getopt('', ['count::', 'no-purge']);
 $count = isset($options['count']) ? max(1, (int)$options['count']) : 10;
 $purge = !isset($options['no-purge']);
 
-$seeder = new IntersectionSeeder($pdo);
+$repository = new PdoRoadSegmentRepository($pdo);
+$seeder = new RoadSegmentSeeder($pdo, $repository);
 $seeder->run($count, $purge);
 
-echo "Seeded {$count} intersections." . PHP_EOL;
+echo "Seeded {$count} road segments." . PHP_EOL;
 
 
