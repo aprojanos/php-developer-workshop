@@ -6,7 +6,10 @@ use SharedKernel\Contract\LoggerInterface;
 use SharedKernel\Contract\ProjectRepositoryInterface;
 use SharedKernel\Domain\Event\AccidentCreatedEvent;
 use SharedKernel\Domain\Event\EventBusInterface;
+use SharedKernel\Domain\Event\ProjectApprovedEvent;
 use SharedKernel\Domain\Event\ProjectEvaluatedEvent;
+use SharedKernel\Domain\Event\ProjectImplementedEvent;
+use SharedKernel\Domain\Event\ProjectProposedEvent;
 use SharedKernel\Enum\ProjectStatus;
 use SharedKernel\Model\Project;
 
@@ -30,6 +33,8 @@ final class ProjectService
         $this->repository->save($project);
 
         $this->logger?->info('Project created', $this->projectContext($project));
+
+        $this->eventBus?->dispatch(new ProjectProposedEvent($project));
     }
 
     public function all(): array
@@ -138,6 +143,14 @@ final class ProjectService
             $this->projectContext($updatedProject),
             ['previousStatus' => $project->status->value]
         ));
+
+        if ($updatedProject->status === ProjectStatus::APPROVED) {
+            $this->eventBus?->dispatch(new ProjectApprovedEvent($updatedProject));
+        }
+
+        if ($updatedProject->status === ProjectStatus::IMPLEMENTED) {
+            $this->eventBus?->dispatch(new ProjectImplementedEvent($updatedProject));
+        }
 
         return $updatedProject;
     }

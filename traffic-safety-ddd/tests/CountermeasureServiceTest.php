@@ -6,9 +6,8 @@ use App\Factory\AccidentFactory;
 use App\Service\CountermeasureService;
 use SharedKernel\Contract\CountermeasureRepositoryInterface;
 use SharedKernel\Contract\LoggerInterface;
-use SharedKernel\Domain\Event\DomainEventInterface;
-use SharedKernel\Domain\Event\EventBusInterface;
 use SharedKernel\Domain\Event\ProjectEvaluatedEvent;
+use SharedKernel\Domain\Event\InMemoryEventBus;
 use SharedKernel\DTO\CountermeasureHotspotFilterDTO;
 use App\Factory\CountermeasureFactory;
 use SharedKernel\Model\Countermeasure;
@@ -299,9 +298,10 @@ final class CountermeasureServiceTest extends TestCase
                 })
             );
 
-        $eventBus = new CountermeasureTestEventBus();
+        $eventBus = new InMemoryEventBus();
 
-        new CountermeasureService($repository, $logger, $eventBus);
+        $service = new CountermeasureService($repository, $logger, $eventBus);
+        $this->assertInstanceOf(CountermeasureService::class, $service);
 
         $eventBus->dispatch(new ProjectEvaluatedEvent($project, $accident));
     }
@@ -328,25 +328,4 @@ final class CountermeasureServiceTest extends TestCase
         return CountermeasureFactory::createFromArray(array_replace($defaults, $overrides));
     }
 }
-
-final class CountermeasureTestEventBus implements EventBusInterface
-{
-    /**
-     * @var array<class-string<DomainEventInterface>, list<callable>>
-     */
-    private array $listeners = [];
-
-    public function dispatch(DomainEventInterface $event): void
-    {
-        foreach ($this->listeners[$event::class] ?? [] as $listener) {
-            $listener($event);
-        }
-    }
-
-    public function addListener(string $eventClass, callable $listener): void
-    {
-        $this->listeners[$eventClass][] = $listener;
-    }
-}
-
 

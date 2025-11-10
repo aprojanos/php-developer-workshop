@@ -10,9 +10,8 @@ use SharedKernel\Contract\CostCalculatorStrategyInterface;
 use SharedKernel\Contract\LoggerInterface;
 use SharedKernel\Contract\NotifierInterface;
 use SharedKernel\Domain\Event\AccidentCreatedEvent;
-use SharedKernel\Domain\Event\DomainEventInterface;
-use SharedKernel\Domain\Event\EventBusInterface;
 use SharedKernel\DTO\AccidentSearchCriteria;
+use SharedKernel\Domain\Event\InMemoryEventBus;
 use SharedKernel\DTO\AccidentLocationDTO;
 use SharedKernel\DTO\AccidentSearchDTO;
 use SharedKernel\Enum\AccidentType;
@@ -63,13 +62,13 @@ final class AccidentServiceTest extends TestCase
                     && $payload['occurredAt'] === $accident->occurredAt->format('c');
             }));
 
-        $eventBus = new CapturingEventBus();
+        $eventBus = new InMemoryEventBus();
 
         $service = new AccidentService($repository, new SimpleCostCalculator(), $logger, $notifier, $eventBus);
         $service->create($accident);
 
-        $this->assertCount(1, $eventBus->events);
-        $dispatchedEvent = $eventBus->events[0];
+        $this->assertCount(1, $eventBus->dispatchedEvents);
+        $dispatchedEvent = $eventBus->dispatchedEvents[0];
         $this->assertInstanceOf(AccidentCreatedEvent::class, $dispatchedEvent);
         if ($dispatchedEvent instanceof AccidentCreatedEvent) {
             $this->assertSame($accident, $dispatchedEvent->getAccident());
@@ -280,29 +279,3 @@ final class AccidentServiceTest extends TestCase
     }
 }
 
-final class CapturingEventBus implements EventBusInterface
-{
-    /**
-     * @var DomainEventInterface[]
-     */
-    public array $events = [];
-
-    /**
-     * @var array<class-string<DomainEventInterface>, list<callable>>
-     */
-    private array $listeners = [];
-
-    public function dispatch(DomainEventInterface $event): void
-    {
-        $this->events[] = $event;
-
-        foreach ($this->listeners[$event::class] ?? [] as $listener) {
-            $listener($event);
-        }
-    }
-
-    public function addListener(string $eventClass, callable $listener): void
-    {
-        $this->listeners[$eventClass][] = $listener;
-    }
-}
