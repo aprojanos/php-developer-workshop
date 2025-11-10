@@ -52,6 +52,34 @@ use App\Repository\PdoRoadSegmentRepository;
 use App\Enum\HotspotStatus;
 use App\Enum\AccidentType;
 use App\Factory\HotspotFactory;
+use App\Repository\PdoCountermeasureRepository;
+use App\Service\CountermeasureService;
+use App\DTO\CountermeasureHotspotFilterDTO;
+use App\Enum\TargetType;
+use App\Enum\CollisionType;
+use App\Enum\InjurySeverity;
+use App\Repository\PdoProjectRepository;
+use App\Service\ProjectService;
+use App\Model\Project;
+use App\ValueObject\MonetaryAmount;
+use App\Enum\ProjectStatus;
+
+/**
+ * @template T
+ * @param array<int, T> $items
+ * @return array<int, T>
+ */
+function randomSubset(array $items): array
+{
+    if (empty($items)) {
+        return [];
+    }
+
+    $count = random_int(1, count($items));
+    shuffle($items);
+
+    return array_slice($items, 0, $count);
+}
 
 // Create PostgreSQL PDO connection
 $dbHost = $_ENV['DB_HOST'] ?? 'localhost';
@@ -120,6 +148,10 @@ $hotspotRepository  = new PdoHotspotRepository($pdo);
 $hotspotService = new HotspotService($hotspotRepository, $accidentService, $logger);
 $intersectionRepository = new PdoIntersectionRepository($pdo);
 $roadSegmentRepository = new PdoRoadSegmentRepository($pdo);
+$countermeasureRepository = new PdoCountermeasureRepository($pdo);
+$countermeasureService = new CountermeasureService($countermeasureRepository, $logger);
+$projectRepository = new PdoProjectRepository($pdo);
+$projectService = new ProjectService($projectRepository, $logger);
 
 $existingHotspots = $hotspotRepository->all();
 $nextHotspotId = empty($existingHotspots)
@@ -216,6 +248,118 @@ foreach (LocationType::cases() as $locationType) {
 
             echo "Hotspot created with ID {$newHotspot->id}\n";
         }
+    }
+}
+
+echo "\nEvaluating countermeasures for existing hotspots...\n";
+$evaluatedHotspots = $hotspotRepository->all();
+$existingProjects = $projectRepository->all();
+$nextProjectId = empty($existingProjects)
+    ? 1
+    : (max(array_map(static fn (Project $project) => $project->id, $existingProjects)) + 1);
+
+if (empty($evaluatedHotspots)) {
+    echo "No hotspots available for evaluation.\n";
+} else {
+    foreach ($evaluatedHotspots as $hotspot) {
+        $targetType = $hotspot->location instanceof RoadSegment
+            ? TargetType::ROAD_SEGMENT
+            : TargetType::INTERSECTION;
+
+        $affectedCollisionTypes = match ($targetType) {
+            TargetType::ROAD_SEGMENT => randomSubset([
+                CollisionType::REAR_END,
+                CollisionType::SIDESWIPE,
+                CollisionType::HEAD_ON,
+                CollisionType::SINGLE_VEHICLE,
+                CollisionType::OTHER,
+            ]),
+            TargetType::INTERSECTION => randomSubset([
+                CollisionType::ANGLE,
+                CollisionType::SIDE,
+                CollisionType::REAR_END,
+                CollisionType::HEAD_ON,
+            ]),
+        };
+
+        $affectedSeverities = $hotspot->riskScore >= 1000
+            ? [InjurySeverity::SERIOUS, InjurySeverity::FATAL]
+            : [InjurySeverity::MINOR, InjurySeverity::SERIOUS];
+
+        $filter = new CountermeasureHotspotFilterDTO(
+            targetType: $targetType,
+            affectedCollisionTypes: $affectedCollisionTypes,
+            affectedSeverities: $affectedSeverities
+        );
+
+        $matchingCountermeasures = $countermeasureService->findForHotspot($filter);
+        $topCountermeasures = array_slice($matchingCountermeasures, 0, 3);
+
+        echo "Hotspot {$hotspot->id} ({$targetType->value}) - risk score {$hotspot->riskScore}\n";
+
+        if (empty($topCountermeasures)) {
+            echo "  - No matching countermeasures found.\n";
+            continue;
+        }
+
+        foreach ($topCountermeasures as $index => $countermeasure) {
+            $position = $index + 1;
+            echo sprintf(
+                "  %d. %s (CMF %.2f, status %s)\n",
+                $position,
+                $countermeasure->name,
+                $countermeasure->cmf,
+                $countermeasure->lifecycleStatus->value
+            );
+        }
+
+        $existingHotspotProjects = $projectService->findByHotspot($hotspot->id);
+        if (!empty($existingHotspotProjects)) {
+            echo "  - Project already exists for this hotspot, skipping creation.\n";
+            continue;
+        }
+
+        $selectedCountermeasure = $topCountermeasures[random_int(0, count($topCountermeasures) - 1)];
+
+        $statusOptions = [
+            ProjectStatus::PROPOSED,
+            ProjectStatus::APPROVED,
+            ProjectStatus::IMPLEMENTED,
+        ];
+        $selectedStatus = $statusOptions[array_rand($statusOptions)];
+
+        $expectedCostAmount = random_int(80_000, 350_000);
+        $expectedCost = new MonetaryAmount((float) $expectedCostAmount, 'USD');
+
+        $actualCostAmount = in_array($selectedStatus, [ProjectStatus::IMPLEMENTED], true)
+            ? $expectedCostAmount * (random_int(90, 120) / 100)
+            : 0.0;
+        $actualCost = new MonetaryAmount((float) round($actualCostAmount, 2), 'USD');
+
+        $projectPeriod = new TimePeriod(
+            startDate: $hotspot->period->startDate,
+            endDate: $hotspot->period->endDate
+        );
+
+        $project = new Project(
+            id: $nextProjectId++,
+            countermeasureId: $selectedCountermeasure->id,
+            hotspotId: $hotspot->id,
+            period: $projectPeriod,
+            expectedCost: $expectedCost,
+            actualCost: $actualCost,
+            status: $selectedStatus
+        );
+
+        $projectService->create($project);
+
+        echo sprintf(
+            "  - Project %d created using countermeasure %d (%s) with status %s.\n",
+            $project->id,
+            $selectedCountermeasure->id,
+            $selectedCountermeasure->name,
+            $selectedStatus->value
+        );
     }
 }
 

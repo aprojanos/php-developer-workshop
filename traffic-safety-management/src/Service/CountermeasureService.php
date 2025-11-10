@@ -3,6 +3,7 @@ namespace App\Service;
 
 use App\Contract\CountermeasureRepositoryInterface;
 use App\Contract\LoggerInterface;
+use App\DTO\CountermeasureHotspotFilterDTO;
 use App\Model\Countermeasure;
 
 final class CountermeasureService
@@ -49,6 +50,27 @@ final class CountermeasureService
         }
 
         return $countermeasure;
+    }
+
+    /**
+     * Find countermeasures suitable for a hotspot scenario
+     *
+     * @param CountermeasureHotspotFilterDTO $filter Filter criteria
+     * @return Countermeasure[] Matching countermeasures sorted by CMF desc
+     */
+    public function findForHotspot(CountermeasureHotspotFilterDTO $filter): array
+    {
+        $countermeasures = $this->repository->findForHotspot($filter);
+
+        $this->logger?->info('Countermeasures retrieved for hotspot applicability', [
+            'targetType' => $filter->targetType->value,
+            'affectedCollisionTypes' => array_map(fn($type) => $type->value, $filter->affectedCollisionTypes),
+            'affectedSeverities' => array_map(fn($severity) => $severity->value, $filter->affectedSeverities),
+            'allowedStatuses' => array_map(fn($status) => $status->value, $filter->allowedStatuses),
+            'count' => count($countermeasures),
+        ]);
+
+        return $countermeasures;
     }
 
     /**

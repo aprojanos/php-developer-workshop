@@ -2,6 +2,7 @@
 namespace App\Repository;
 
 use App\Model\Countermeasure;
+use App\DTO\CountermeasureHotspotFilterDTO;
 use App\Factory\CountermeasureFactory;
 use App\Contract\CountermeasureRepositoryInterface;
 use App\Enum\CollisionType;
@@ -65,6 +66,51 @@ final class PdoCountermeasureRepository implements CountermeasureRepositoryInter
             return null;
         }
         return $this->rowToCountermeasure($row);
+    }
+
+    /** @return Countermeasure[] */
+    public function findForHotspot(CountermeasureHotspotFilterDTO $filter): array
+    {
+        $statusPlaceholders = [];
+        $params = [
+            'target_type' => $filter->targetType->value,
+        ];
+
+        foreach ($filter->allowedStatuses as $index => $status) {
+            $placeholder = ':status_' . $index;
+            $statusPlaceholders[] = $placeholder;
+            $params['status_' . $index] = $status->value;
+        }
+
+        if ($statusPlaceholders === []) {
+            return [];
+        }
+
+        $sql = sprintf(
+            'SELECT * FROM countermeasures WHERE target_type = :target_type AND lifecycle_status IN (%s) ORDER BY cmf DESC',
+            implode(', ', $statusPlaceholders)
+        );
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        $countermeasures = [];
+        foreach ($rows as $row) {
+            $countermeasure = $this->rowToCountermeasure($row);
+
+            if (!$this->matchesCollisionTypes($countermeasure, $filter->affectedCollisionTypes)) {
+                continue;
+            }
+
+            if (!$this->matchesSeverities($countermeasure, $filter->affectedSeverities)) {
+                continue;
+            }
+
+            $countermeasures[] = $countermeasure;
+        }
+
+        return $countermeasures;
     }
 
     public function update(Countermeasure $countermeasure): void
@@ -188,5 +234,41 @@ final class PdoCountermeasureRepository implements CountermeasureRepositoryInter
     private function deserializeSeverities(string $json): array
     {
         return json_decode($json, true) ?: [];
+    }
+
+    /**
+     * @param array<\App\Enum\CollisionType> $requiredTypes
+     */
+    private function matchesCollisionTypes(Countermeasure $countermeasure, array $requiredTypes): bool
+    {
+        if ($requiredTypes === []) {
+            return true;
+        }
+
+        foreach ($requiredTypes as $requiredType) {
+            if (!in_array($requiredType, $countermeasure->affectedCollisionTypes, true)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @param array<\App\Enum\InjurySeverity> $requiredSeverities
+     */
+    private function matchesSeverities(Countermeasure $countermeasure, array $requiredSeverities): bool
+    {
+        if ($requiredSeverities === []) {
+            return true;
+        }
+
+        foreach ($requiredSeverities as $requiredSeverity) {
+            if (!in_array($requiredSeverity, $countermeasure->affectedSeverities, true)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

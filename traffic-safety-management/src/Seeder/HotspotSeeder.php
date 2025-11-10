@@ -166,11 +166,11 @@ final class HotspotSeeder
     {
         $totalObserved = array_sum($observed);
         if ($expected <= 0.0) {
-            return round($totalObserved * $this->randomizer->getFloat(0.8, 1.5), 2);
+            return round($totalObserved * $this->randomizer->getFloat(2000.0, 15000.0), 2);
         }
 
         $ratio = $totalObserved / $expected;
-        return round($ratio * $this->randomizer->getFloat(0.9, 1.4), 2);
+        return round($ratio * $this->randomizer->getFloat(2000.0, 15000.0), 2);
     }
 
     private function randomStatus(): HotspotStatus
