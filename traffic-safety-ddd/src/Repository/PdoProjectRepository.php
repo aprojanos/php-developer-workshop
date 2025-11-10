@@ -4,10 +4,10 @@ namespace App\Repository;
 
 use SharedKernel\Contract\ProjectRepositoryInterface;
 use SharedKernel\Enum\ProjectStatus;
-use App\Model\Project;
+use SharedKernel\Model\Project;
 use App\Repository\Exception\ProjectDataIntegrityException;
-use App\ValueObject\MonetaryAmount;
-use App\ValueObject\TimePeriod;
+use SharedKernel\ValueObject\MonetaryAmount;
+use SharedKernel\ValueObject\TimePeriod;
 
 final class PdoProjectRepository implements ProjectRepositoryInterface
 {

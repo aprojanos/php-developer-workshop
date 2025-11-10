@@ -2,7 +2,7 @@
 
 namespace SharedKernel\Contract;
 
-use App\Model\RoadSegment;
+use SharedKernel\Model\RoadSegment;
 
 interface RoadSegmentRepositoryInterface
 {

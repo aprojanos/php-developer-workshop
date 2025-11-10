@@ -5,11 +5,11 @@ use SharedKernel\Contract\AccidentRepositoryInterface;
 use SharedKernel\Contract\CostCalculatorStrategyInterface;
 use SharedKernel\Contract\LoggerInterface;
 use SharedKernel\Contract\NotifierInterface;
-use App\Model\AccidentBase;
+use SharedKernel\Model\AccidentBase;
 use App\Service\SimpleCostCalculator;
 use SharedKernel\DTO\AccidentLocationDTO;
+use SharedKernel\DTO\AccidentSearchCriteria;
 use SharedKernel\DTO\AccidentSearchDTO;
-use App\ValueObject\TimePeriod;
 use SharedKernel\Enum\InjurySeverity;
 use SharedKernel\Enum\AccidentType;
 use SharedKernel\Enum\CollisionType;
@@ -183,18 +183,20 @@ final class AccidentService
         $convertedRoadCondition = $this->convertEnum($searchDTO->roadCondition, RoadCondition::class);
         $convertedVisibilityCondition = $this->convertEnum($searchDTO->visibilityCondition, VisibilityCondition::class);
 
-        $accidents = $this->repository->search(
-            $searchDTO->occurredAtInterval,
-            $searchDTO->location,
-            $convertedSeverity,
-            $convertedType,
-            $convertedCollisionType,
-            $convertedCauseFactor,
-            $convertedWeatherCondition,
-            $convertedRoadCondition,
-            $convertedVisibilityCondition,
-            $searchDTO->injuredPersonsCount
+        $criteria = new AccidentSearchCriteria(
+            occurredAtInterval: $searchDTO->occurredAtInterval,
+            location: $searchDTO->location,
+            severity: $convertedSeverity,
+            type: $convertedType,
+            collisionType: $convertedCollisionType,
+            causeFactor: $convertedCauseFactor,
+            weatherCondition: $convertedWeatherCondition,
+            roadCondition: $convertedRoadCondition,
+            visibilityCondition: $convertedVisibilityCondition,
+            injuredPersonsCount: $searchDTO->injuredPersonsCount
         );
+
+        $accidents = $this->repository->search($criteria);
 
         $this->logger?->info('Accident search performed', [
             'criteria' => [

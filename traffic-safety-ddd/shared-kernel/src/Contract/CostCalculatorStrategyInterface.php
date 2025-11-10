@@ -1,7 +1,7 @@
 <?php
 namespace SharedKernel\Contract;
 
-use App\Model\AccidentBase;
+use SharedKernel\Model\AccidentBase;
 
 interface CostCalculatorStrategyInterface
 {

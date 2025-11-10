@@ -1,9 +1,9 @@
 <?php
 namespace App\Factory;
 
-use App\Model\AccidentInjury;
-use App\Model\AccidentPDO;
-use App\Model\AccidentBase;
+use SharedKernel\Model\AccidentInjury;
+use SharedKernel\Model\AccidentPDO;
+use SharedKernel\Model\AccidentBase;
 use SharedKernel\Enum\AccidentType;
 use SharedKernel\Enum\InjurySeverity;
 use SharedKernel\DTO\AccidentLocationDTO;

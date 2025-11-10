@@ -1,8 +1,8 @@
 <?php
 namespace SharedKernel\Contract;
 
-use App\Model\Hotspot;
-use App\ValueObject\TimePeriod;
+use SharedKernel\Model\Hotspot;
+use SharedKernel\ValueObject\TimePeriod;
 use SharedKernel\Enum\HotspotStatus;
 
 interface HotspotRepositoryInterface

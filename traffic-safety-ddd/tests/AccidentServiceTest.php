@@ -5,22 +5,23 @@ use PHPUnit\Framework\MockObject\MockObject;
 use App\Service\AccidentService;
 use App\Service\SimpleCostCalculator;
 use App\Factory\AccidentFactory;
-use App\Contract\AccidentRepositoryInterface;
-use App\Contract\CostCalculatorStrategyInterface;
-use App\Contract\LoggerInterface;
-use App\Contract\NotifierInterface;
-use App\DTO\AccidentLocationDTO;
-use App\DTO\AccidentSearchDTO;
-use App\Enum\AccidentType;
-use App\Enum\CauseFactor;
-use App\Enum\CollisionType;
-use App\Enum\InjurySeverity;
-use App\Enum\LocationType;
-use App\Enum\RoadCondition;
-use App\Enum\VisibilityCondition;
-use App\Enum\WeatherCondition;
-use App\Model\AccidentBase;
-use App\ValueObject\TimePeriod;
+use SharedKernel\Contract\AccidentRepositoryInterface;
+use SharedKernel\Contract\CostCalculatorStrategyInterface;
+use SharedKernel\Contract\LoggerInterface;
+use SharedKernel\Contract\NotifierInterface;
+use SharedKernel\DTO\AccidentSearchCriteria;
+use SharedKernel\DTO\AccidentLocationDTO;
+use SharedKernel\DTO\AccidentSearchDTO;
+use SharedKernel\Enum\AccidentType;
+use SharedKernel\Enum\CauseFactor;
+use SharedKernel\Enum\CollisionType;
+use SharedKernel\Enum\InjurySeverity;
+use SharedKernel\Enum\LocationType;
+use SharedKernel\Enum\RoadCondition;
+use SharedKernel\Enum\VisibilityCondition;
+use SharedKernel\Enum\WeatherCondition;
+use SharedKernel\Model\AccidentBase;
+use SharedKernel\ValueObject\TimePeriod;
 
 final class AccidentServiceTest extends TestCase
 {
@@ -225,18 +226,21 @@ final class AccidentServiceTest extends TestCase
         $repository = $this->createMock(AccidentRepositoryInterface::class);
         $repository->expects($this->once())
             ->method('search')
-            ->with(
+            ->with($this->callback(static function (AccidentSearchCriteria $criteria) use (
                 $period,
-                $location,
-                InjurySeverity::SERIOUS,
-                AccidentType::INJURY,
-                CollisionType::HEAD_ON,
-                CauseFactor::SPEEDING,
-                WeatherCondition::RAIN,
-                RoadCondition::WET,
-                VisibilityCondition::POOR,
-                3
-            )
+                $location
+            ): bool {
+                return $criteria->occurredAtInterval === $period
+                    && $criteria->location === $location
+                    && $criteria->severity === InjurySeverity::SERIOUS
+                    && $criteria->type === AccidentType::INJURY
+                    && $criteria->collisionType === CollisionType::HEAD_ON
+                    && $criteria->causeFactor === CauseFactor::SPEEDING
+                    && $criteria->weatherCondition === WeatherCondition::RAIN
+                    && $criteria->roadCondition === RoadCondition::WET
+                    && $criteria->visibilityCondition === VisibilityCondition::POOR
+                    && $criteria->injuredPersonsCount === 3;
+            }))
             ->willReturn($expectedResults);
 
         $service = new AccidentService($repository, new SimpleCostCalculator());

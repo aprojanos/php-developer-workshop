@@ -2,7 +2,7 @@
 
 namespace SharedKernel\DTO;
 
-use App\ValueObject\TimePeriod;
+use SharedKernel\ValueObject\TimePeriod;
 
 final readonly class HotspotSearchDTO
 {

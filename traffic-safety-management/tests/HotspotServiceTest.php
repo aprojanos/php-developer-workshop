@@ -3,25 +3,24 @@
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
 use App\Service\HotspotService;
-use SharedKernel\Contract\HotspotRepositoryInterface;
-use SharedKernel\Contract\LoggerInterface;
-use SharedKernel\Contract\AccidentRepositoryInterface;
-use SharedKernel\Contract\CostCalculatorStrategyInterface;
+use App\Contract\HotspotRepositoryInterface;
+use App\Contract\LoggerInterface;
+use App\Contract\AccidentRepositoryInterface;
+use App\Contract\CostCalculatorStrategyInterface;
 use App\Service\AccidentService;
-use SharedKernel\DTO\AccidentSearchCriteria;
-use SharedKernel\Enum\HotspotStatus;
-use SharedKernel\Enum\LocationType;
-use SharedKernel\Enum\AccidentType;
-use SharedKernel\Enum\FunctionalClass;
-use SharedKernel\DTO\AccidentLocationDTO;
-use SharedKernel\DTO\HotspotScreeningDTO;
-use SharedKernel\DTO\HotspotSearchDTO;
-use SharedKernel\ValueObject\TimePeriod;
-use SharedKernel\ValueObject\GeoLocation;
-use SharedKernel\ValueObject\ObservedCrashes;
-use SharedKernel\Model\Hotspot;
-use SharedKernel\Model\RoadSegment;
-use SharedKernel\Model\AccidentBase;
+use App\Enum\HotspotStatus;
+use App\Enum\LocationType;
+use App\Enum\AccidentType;
+use App\Enum\FunctionalClass;
+use App\DTO\AccidentLocationDTO;
+use App\DTO\HotspotScreeningDTO;
+use App\DTO\HotspotSearchDTO;
+use App\ValueObject\TimePeriod;
+use App\ValueObject\GeoLocation;
+use App\ValueObject\ObservedCrashes;
+use App\Model\Hotspot;
+use App\Model\RoadSegment;
+use App\Model\AccidentBase;
 use App\Factory\AccidentFactory;
 
 final class HotspotServiceTest extends TestCase
@@ -444,8 +443,18 @@ final class HotspotServiceTest extends TestCase
                 ));
             }
 
-            public function search(AccidentSearchCriteria $criteria): array
-            {
+            public function search(
+                ?\App\ValueObject\TimePeriod $occurredAtInterval = null,
+                ?AccidentLocationDTO $location = null,
+                ?\App\Enum\InjurySeverity $severity = null,
+                ?\App\Enum\AccidentType $type = null,
+                ?\App\Enum\CollisionType $collisionType = null,
+                ?\App\Enum\CauseFactor $causeFactor = null,
+                ?\App\Enum\WeatherCondition $weatherCondition = null,
+                ?\App\Enum\RoadCondition $roadCondition = null,
+                ?\App\Enum\VisibilityCondition $visibilityCondition = null,
+                ?int $injuredPersonsCount = null
+            ): array {
                 return [];
             }
         };

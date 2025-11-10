@@ -7,11 +7,11 @@ use SharedKernel\Enum\FunctionalClass;
 use SharedKernel\Enum\HotspotStatus;
 use SharedKernel\Enum\IntersectionControlType;
 use App\Factory\HotspotFactory;
-use App\Model\Intersection;
-use App\Model\RoadSegment;
+use SharedKernel\Model\Intersection;
+use SharedKernel\Model\RoadSegment;
 use App\Seeder\Exception\MissingHotspotLocationReferenceException;
 use App\Service\HotspotService;
-use App\ValueObject\GeoLocation;
+use SharedKernel\ValueObject\GeoLocation;
 use Random\Randomizer;
 
 final class HotspotSeeder

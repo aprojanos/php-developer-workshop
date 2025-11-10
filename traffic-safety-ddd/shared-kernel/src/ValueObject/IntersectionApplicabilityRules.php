@@ -1,6 +1,6 @@
 <?php
 
-namespace App\ValueObject;
+namespace SharedKernel\ValueObject;
 
 use SharedKernel\Enum\IntersectionType;
 use SharedKernel\Enum\IntersectionControlType;

@@ -1,5 +1,5 @@
 <?php
-namespace App\Model;
+namespace SharedKernel\Model;
 
 use SharedKernel\Enum\InjurySeverity;
 use SharedKernel\Enum\AccidentType;

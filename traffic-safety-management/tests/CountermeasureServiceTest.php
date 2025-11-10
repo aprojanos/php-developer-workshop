@@ -3,15 +3,15 @@
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
 use App\Service\CountermeasureService;
-use SharedKernel\Contract\CountermeasureRepositoryInterface;
-use SharedKernel\Contract\LoggerInterface;
-use SharedKernel\DTO\CountermeasureHotspotFilterDTO;
+use App\Contract\CountermeasureRepositoryInterface;
+use App\Contract\LoggerInterface;
+use App\DTO\CountermeasureHotspotFilterDTO;
 use App\Factory\CountermeasureFactory;
-use SharedKernel\Model\Countermeasure;
-use SharedKernel\Enum\TargetType;
-use SharedKernel\Enum\CollisionType;
-use SharedKernel\Enum\InjurySeverity;
-use SharedKernel\Enum\LifecycleStatus;
+use App\Model\Countermeasure;
+use App\Enum\TargetType;
+use App\Enum\CollisionType;
+use App\Enum\InjurySeverity;
+use App\Enum\LifecycleStatus;
 
 final class CountermeasureServiceTest extends TestCase
 {

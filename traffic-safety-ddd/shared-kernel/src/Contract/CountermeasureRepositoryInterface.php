@@ -2,7 +2,7 @@
 namespace SharedKernel\Contract;
 
 use SharedKernel\DTO\CountermeasureHotspotFilterDTO;
-use App\Model\Countermeasure;
+use SharedKernel\Model\Countermeasure;
 
 interface CountermeasureRepositoryInterface
 {

@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Model;
+namespace SharedKernel\Model;
 
 use SharedKernel\Enum\FunctionalClass;
-use App\ValueObject\GeoLocation;
+use SharedKernel\ValueObject\GeoLocation;
 
 final readonly class RoadSegment
 {

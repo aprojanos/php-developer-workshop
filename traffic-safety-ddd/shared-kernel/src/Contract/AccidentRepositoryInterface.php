@@ -1,7 +1,8 @@
 <?php
 namespace SharedKernel\Contract;
 
-use App\Model\AccidentBase;
+use SharedKernel\DTO\AccidentSearchCriteria;
+use SharedKernel\Model\AccidentBase;
 use SharedKernel\DTO\AccidentLocationDTO;
 
 interface AccidentRepositoryInterface
@@ -15,16 +16,5 @@ interface AccidentRepositoryInterface
     /** @return AccidentBase[] */
     public function findByLocation(AccidentLocationDTO $location): array;
     /** @return AccidentBase[] */
-    public function search(
-        ?\App\ValueObject\TimePeriod $occurredAtInterval = null,
-        ?AccidentLocationDTO $location = null,
-        ?\SharedKernel\Enum\InjurySeverity $severity = null,
-        ?\SharedKernel\Enum\AccidentType $type = null,
-        ?\SharedKernel\Enum\CollisionType $collisionType = null,
-        ?\SharedKernel\Enum\CauseFactor $causeFactor = null,
-        ?\SharedKernel\Enum\WeatherCondition $weatherCondition = null,
-        ?\SharedKernel\Enum\RoadCondition $roadCondition = null,
-        ?\SharedKernel\Enum\VisibilityCondition $visibilityCondition = null,
-        ?int $injuredPersonsCount = null
-    ): array;
+    public function search(AccidentSearchCriteria $criteria): array;
 }

@@ -2,7 +2,7 @@
 
 namespace SharedKernel\Contract;
 
-use App\Model\Intersection;
+use SharedKernel\Model\Intersection;
 
 interface IntersectionRepositoryInterface
 {

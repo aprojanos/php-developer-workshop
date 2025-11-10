@@ -3,7 +3,7 @@
 namespace SharedKernel\DTO;
 
 use SharedKernel\Enum\LocationType;
-use App\ValueObject\TimePeriod;
+use SharedKernel\ValueObject\TimePeriod;
 
 final readonly class HotspotScreeningDTO
 {

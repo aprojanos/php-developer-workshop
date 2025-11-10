@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Model;
+namespace SharedKernel\Model;
 
 use SharedKernel\Enum\TargetType;
 use SharedKernel\Enum\CollisionType;
 use SharedKernel\Enum\InjurySeverity;
 use SharedKernel\Enum\LifecycleStatus;
-use App\ValueObject\IntersectionApplicabilityRules;
-use App\ValueObject\MonetaryAmount;
+use SharedKernel\ValueObject\IntersectionApplicabilityRules;
+use SharedKernel\ValueObject\MonetaryAmount;
 
 final readonly class IntersectionCountermeasure extends Countermeasure
 {

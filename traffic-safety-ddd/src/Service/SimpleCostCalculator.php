@@ -1,7 +1,7 @@
 <?php
 namespace App\Service;
 
-use App\Model\AccidentBase;
+use SharedKernel\Model\AccidentBase;
 use SharedKernel\Enum\InjurySeverity;
 use SharedKernel\Contract\CostCalculatorStrategyInterface;
 

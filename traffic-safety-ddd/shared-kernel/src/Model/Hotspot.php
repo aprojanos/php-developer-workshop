@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Model;
+namespace SharedKernel\Model;
 
 use SharedKernel\Enum\HotspotStatus;
-use App\ValueObject\TimePeriod;
-use App\ValueObject\ObservedCrashes;
+use SharedKernel\ValueObject\TimePeriod;
+use SharedKernel\ValueObject\ObservedCrashes;
 
 final readonly class Hotspot
 {

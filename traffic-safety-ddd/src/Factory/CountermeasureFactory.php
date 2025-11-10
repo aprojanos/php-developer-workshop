@@ -1,9 +1,9 @@
 <?php
 namespace App\Factory;
 
-use App\Model\Countermeasure;
-use App\Model\IntersectionCountermeasure;
-use App\Model\RoadSegmentCountermeasure;
+use SharedKernel\Model\Countermeasure;
+use SharedKernel\Model\IntersectionCountermeasure;
+use SharedKernel\Model\RoadSegmentCountermeasure;
 use SharedKernel\Enum\TargetType;
 use SharedKernel\Enum\CollisionType;
 use SharedKernel\Enum\InjurySeverity;
@@ -11,9 +11,9 @@ use SharedKernel\Enum\LifecycleStatus;
 use SharedKernel\Enum\IntersectionType;
 use SharedKernel\Enum\IntersectionControlType;
 use SharedKernel\Enum\RoadClassification;
-use App\ValueObject\IntersectionApplicabilityRules;
-use App\ValueObject\RoadSegmentApplicabilityRules;
-use App\ValueObject\MonetaryAmount;
+use SharedKernel\ValueObject\IntersectionApplicabilityRules;
+use SharedKernel\ValueObject\RoadSegmentApplicabilityRules;
+use SharedKernel\ValueObject\MonetaryAmount;
 
 /**
  * Build Countermeasure value object from raw arrays.

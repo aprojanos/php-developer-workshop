@@ -5,7 +5,7 @@ namespace App\Service;
 use SharedKernel\Contract\LoggerInterface;
 use SharedKernel\Contract\ProjectRepositoryInterface;
 use SharedKernel\Enum\ProjectStatus;
-use App\Model\Project;
+use SharedKernel\Model\Project;
 
 final class ProjectService
 {

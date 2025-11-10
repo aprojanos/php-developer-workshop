@@ -4,8 +4,8 @@ namespace App\Repository;
 
 use SharedKernel\Contract\IntersectionRepositoryInterface;
 use SharedKernel\Enum\IntersectionControlType;
-use App\Model\Intersection;
-use App\ValueObject\GeoLocation;
+use SharedKernel\Model\Intersection;
+use SharedKernel\ValueObject\GeoLocation;
 
 final class PdoIntersectionRepository implements IntersectionRepositoryInterface
 {

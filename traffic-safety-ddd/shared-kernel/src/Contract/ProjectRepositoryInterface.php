@@ -3,7 +3,7 @@
 namespace SharedKernel\Contract;
 
 use SharedKernel\Enum\ProjectStatus;
-use App\Model\Project;
+use SharedKernel\Model\Project;
 
 interface ProjectRepositoryInterface
 {

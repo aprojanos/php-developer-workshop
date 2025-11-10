@@ -1,13 +1,13 @@
 <?php
 namespace App\Repository;
 
-use App\Model\Countermeasure;
+use SharedKernel\Model\Countermeasure;
 use SharedKernel\DTO\CountermeasureHotspotFilterDTO;
 use App\Factory\CountermeasureFactory;
 use SharedKernel\Contract\CountermeasureRepositoryInterface;
 use SharedKernel\Enum\CollisionType;
 use SharedKernel\Enum\InjurySeverity;
-use App\ValueObject\MonetaryAmount;
+use SharedKernel\ValueObject\MonetaryAmount;
 
 final class PdoCountermeasureRepository implements CountermeasureRepositoryInterface
 {
@@ -177,7 +177,7 @@ final class PdoCountermeasureRepository implements CountermeasureRepositoryInter
 
     private function serializeApplicabilityRules(Countermeasure $countermeasure): array
     {
-        if ($countermeasure instanceof \App\Model\IntersectionCountermeasure) {
+        if ($countermeasure instanceof \SharedKernel\Model\IntersectionCountermeasure) {
             return [
                 'intersection_types' => array_map(
                     fn($type) => $type->value,
@@ -190,7 +190,7 @@ final class PdoCountermeasureRepository implements CountermeasureRepositoryInter
             ];
         }
 
-        if ($countermeasure instanceof \App\Model\RoadSegmentCountermeasure) {
+        if ($countermeasure instanceof \SharedKernel\Model\RoadSegmentCountermeasure) {
             return [
                 'road_classifications' => array_map(
                     fn($classification) => $classification->value,

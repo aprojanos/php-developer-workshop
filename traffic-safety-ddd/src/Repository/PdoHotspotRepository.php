@@ -1,16 +1,16 @@
 <?php
 namespace App\Repository;
 
-use App\Model\Hotspot;
-use App\Model\RoadSegment;
-use App\Model\Intersection;
+use SharedKernel\Model\Hotspot;
+use SharedKernel\Model\RoadSegment;
+use SharedKernel\Model\Intersection;
 use App\Factory\HotspotFactory;
 use SharedKernel\Contract\HotspotRepositoryInterface;
 use SharedKernel\Enum\FunctionalClass;
 use SharedKernel\Enum\IntersectionControlType;
 use SharedKernel\Enum\HotspotStatus;
-use App\ValueObject\TimePeriod;
-use App\ValueObject\GeoLocation;
+use SharedKernel\ValueObject\TimePeriod;
+use SharedKernel\ValueObject\GeoLocation;
 
 final class PdoHotspotRepository implements HotspotRepositoryInterface
 {
@@ -268,7 +268,7 @@ final class PdoHotspotRepository implements HotspotRepositoryInterface
         );
     }
 
-    private function observedCrashesToJson(\App\ValueObject\ObservedCrashes $observedCrashes): string
+    private function observedCrashesToJson(\SharedKernel\ValueObject\ObservedCrashes $observedCrashes): string
     {
         $data = [];
         foreach ($observedCrashes->toArray() as $type => $count) {

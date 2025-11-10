@@ -2,16 +2,9 @@
 namespace App\Decorator;
 
 use SharedKernel\Contract\AccidentRepositoryInterface;
-use App\Model\AccidentBase;
+use SharedKernel\DTO\AccidentSearchCriteria;
+use SharedKernel\Model\AccidentBase;
 use SharedKernel\DTO\AccidentLocationDTO;
-use App\ValueObject\TimePeriod;
-use SharedKernel\Enum\InjurySeverity;
-use SharedKernel\Enum\AccidentType;
-use SharedKernel\Enum\CollisionType;
-use SharedKernel\Enum\CauseFactor;
-use SharedKernel\Enum\WeatherCondition;
-use SharedKernel\Enum\RoadCondition;
-use SharedKernel\Enum\VisibilityCondition;
 
 /**
  * Simple caching decorator for AccidentRepositoryInterface.
@@ -89,32 +82,11 @@ final class CachingAccidentRepositoryDecorator implements AccidentRepositoryInte
     }
 
     /** @return AccidentBase[] */
-    public function search(
-        ?TimePeriod $occurredAtInterval = null,
-        ?AccidentLocationDTO $location = null,
-        ?InjurySeverity $severity = null,
-        ?AccidentType $type = null,
-        ?CollisionType $collisionType = null,
-        ?CauseFactor $causeFactor = null,
-        ?WeatherCondition $weatherCondition = null,
-        ?RoadCondition $roadCondition = null,
-        ?VisibilityCondition $visibilityCondition = null,
-        ?int $injuredPersonsCount = null
-    ): array {
+    public function search(AccidentSearchCriteria $criteria): array
+    {
         // Delegate to inner repository
         // Could potentially use cache with complex key generation, but for simplicity delegate
-        return $this->inner->search(
-            $occurredAtInterval,
-            $location,
-            $severity,
-            $type,
-            $collisionType,
-            $causeFactor,
-            $weatherCondition,
-            $roadCondition,
-            $visibilityCondition,
-            $injuredPersonsCount
-        );
+        return $this->inner->search($criteria);
     }
 
     private function invalidate(): void

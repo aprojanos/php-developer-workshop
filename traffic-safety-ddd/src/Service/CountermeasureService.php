@@ -4,7 +4,7 @@ namespace App\Service;
 use SharedKernel\Contract\CountermeasureRepositoryInterface;
 use SharedKernel\Contract\LoggerInterface;
 use SharedKernel\DTO\CountermeasureHotspotFilterDTO;
-use App\Model\Countermeasure;
+use SharedKernel\Model\Countermeasure;
 
 final class CountermeasureService
 {

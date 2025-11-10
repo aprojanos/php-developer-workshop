@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Model;
+namespace SharedKernel\Model;
 
 use SharedKernel\Enum\ProjectStatus;
-use App\ValueObject\TimePeriod;
-use App\ValueObject\MonetaryAmount;
+use SharedKernel\ValueObject\TimePeriod;
+use SharedKernel\ValueObject\MonetaryAmount;
 
 final readonly class Project
 {

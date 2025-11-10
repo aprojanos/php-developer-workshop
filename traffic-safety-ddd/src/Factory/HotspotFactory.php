@@ -1,9 +1,9 @@
 <?php
 namespace App\Factory;
 
-use App\Model\Hotspot;
-use App\ValueObject\TimePeriod;
-use App\ValueObject\ObservedCrashes;
+use SharedKernel\Model\Hotspot;
+use SharedKernel\ValueObject\TimePeriod;
+use SharedKernel\ValueObject\ObservedCrashes;
 use SharedKernel\Enum\HotspotStatus;
 use SharedKernel\Enum\AccidentType;
 

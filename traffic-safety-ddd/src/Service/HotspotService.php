@@ -3,16 +3,16 @@ namespace App\Service;
 
 use SharedKernel\Contract\HotspotRepositoryInterface;
 use SharedKernel\Contract\LoggerInterface;
-use App\Model\Hotspot;
+use SharedKernel\Model\Hotspot;
 use SharedKernel\DTO\HotspotSearchDTO;
 use SharedKernel\DTO\HotspotScreeningDTO;
 use SharedKernel\Enum\HotspotStatus;
 use App\Service\AccidentService;
 use SharedKernel\Enum\LocationType;
-use App\Model\AccidentBase;
-use App\Model\Intersection;
-use App\Model\RoadSegment;
-use App\ValueObject\TimePeriod;
+use SharedKernel\Model\AccidentBase;
+use SharedKernel\Model\Intersection;
+use SharedKernel\Model\RoadSegment;
+use SharedKernel\ValueObject\TimePeriod;
 
 final class HotspotService
 {

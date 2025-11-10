@@ -4,8 +4,8 @@ namespace App\Seeder;
 
 use SharedKernel\Contract\RoadSegmentRepositoryInterface;
 use SharedKernel\Enum\FunctionalClass;
-use App\Model\RoadSegment;
-use App\ValueObject\GeoLocation;
+use SharedKernel\Model\RoadSegment;
+use SharedKernel\ValueObject\GeoLocation;
 
 final class RoadSegmentSeeder
 {

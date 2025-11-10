@@ -1,19 +1,13 @@
 <?php
 namespace App\Repository;
 
-use App\Model\AccidentBase;
+use SharedKernel\DTO\AccidentSearchCriteria;
+use SharedKernel\Model\AccidentBase;
 use App\Factory\AccidentFactory;
 use SharedKernel\Contract\AccidentRepositoryInterface;
 use SharedKernel\Enum\AccidentType;
 use SharedKernel\Enum\LocationType;
-use SharedKernel\Enum\InjurySeverity;
-use SharedKernel\Enum\CollisionType;
-use SharedKernel\Enum\CauseFactor;
-use SharedKernel\Enum\WeatherCondition;
-use SharedKernel\Enum\RoadCondition;
-use SharedKernel\Enum\VisibilityCondition;
 use SharedKernel\DTO\AccidentLocationDTO;
-use App\ValueObject\TimePeriod;
 
 final class PdoAccidentRepository implements AccidentRepositoryInterface
 {
@@ -152,84 +146,74 @@ final class PdoAccidentRepository implements AccidentRepositoryInterface
     }
 
     /** @return AccidentBase[] */
-    public function search(
-        ?TimePeriod $occurredAtInterval = null,
-        ?AccidentLocationDTO $location = null,
-        ?InjurySeverity $severity = null,
-        ?AccidentType $type = null,
-        ?CollisionType $collisionType = null,
-        ?CauseFactor $causeFactor = null,
-        ?WeatherCondition $weatherCondition = null,
-        ?RoadCondition $roadCondition = null,
-        ?VisibilityCondition $visibilityCondition = null,
-        ?int $injuredPersonsCount = null
-    ): array {
+    public function search(AccidentSearchCriteria $criteria): array
+    {
         $conditions = [];
         $params = [];
 
         // Date interval filter
-        if ($occurredAtInterval !== null) {
+        if ($criteria->occurredAtInterval !== null) {
             $conditions[] = 'occurred_at >= :start_date AND occurred_at <= :end_date';
-            $params['start_date'] = $occurredAtInterval->startDate->format('c');
-            $params['end_date'] = $occurredAtInterval->endDate->format('c');
+            $params['start_date'] = $criteria->occurredAtInterval->startDate->format('c');
+            $params['end_date'] = $criteria->occurredAtInterval->endDate->format('c');
         }
 
         // Location filter
-        if ($location !== null) {
-            $field = match ($location->locationType) {
+        if ($criteria->location !== null) {
+            $field = match ($criteria->location->locationType) {
                 LocationType::ROADSEGMENT => 'road_segment_id',
                 LocationType::INTERSECTION => 'intersection_id',
             };
             $conditions[] = "`{$field}` = :location_id";
-            $params['location_id'] = $location->locationId;
+            $params['location_id'] = $criteria->location->locationId;
         }
 
         // Severity filter
-        if ($severity !== null) {
+        if ($criteria->severity !== null) {
             $conditions[] = 'severity = :severity';
-            $params['severity'] = $severity->value;
+            $params['severity'] = $criteria->severity->value;
         }
 
         // Type filter (INJURY or PDO)
-        if ($type !== null) {
+        if ($criteria->type !== null) {
             $conditions[] = 'type = :type';
-            $params['type'] = $type->value;
+            $params['type'] = $criteria->type->value;
         }
 
         // Collision type filter
-        if ($collisionType !== null) {
+        if ($criteria->collisionType !== null) {
             $conditions[] = 'collision_type = :collision_type';
-            $params['collision_type'] = $collisionType->value;
+            $params['collision_type'] = $criteria->collisionType->value;
         }
 
         // Cause factor filter
-        if ($causeFactor !== null) {
+        if ($criteria->causeFactor !== null) {
             $conditions[] = 'cause_factor = :cause_factor';
-            $params['cause_factor'] = $causeFactor->value;
+            $params['cause_factor'] = $criteria->causeFactor->value;
         }
 
         // Weather conditions filter
-        if ($weatherCondition !== null) {
+        if ($criteria->weatherCondition !== null) {
             $conditions[] = 'weather_conditions = :weather_conditions';
-            $params['weather_conditions'] = $weatherCondition->value;
+            $params['weather_conditions'] = $criteria->weatherCondition->value;
         }
 
         // Road conditions filter
-        if ($roadCondition !== null) {
+        if ($criteria->roadCondition !== null) {
             $conditions[] = 'road_conditions = :road_conditions';
-            $params['road_conditions'] = $roadCondition->value;
+            $params['road_conditions'] = $criteria->roadCondition->value;
         }
 
         // Visibility conditions filter
-        if ($visibilityCondition !== null) {
+        if ($criteria->visibilityCondition !== null) {
             $conditions[] = 'visibility_conditions = :visibility_conditions';
-            $params['visibility_conditions'] = $visibilityCondition->value;
+            $params['visibility_conditions'] = $criteria->visibilityCondition->value;
         }
 
         // Injured persons count filter
-        if ($injuredPersonsCount !== null) {
+        if ($criteria->injuredPersonsCount !== null) {
             $conditions[] = 'injured_persons_count = :injured_persons_count';
-            $params['injured_persons_count'] = $injuredPersonsCount;
+            $params['injured_persons_count'] = $criteria->injuredPersonsCount;
         }
 
         // Build SQL query

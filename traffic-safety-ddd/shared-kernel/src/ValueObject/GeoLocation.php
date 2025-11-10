@@ -1,6 +1,6 @@
 <?php
 
-namespace App\ValueObject;
+namespace SharedKernel\ValueObject;
 
 final readonly class GeoLocation
 {
