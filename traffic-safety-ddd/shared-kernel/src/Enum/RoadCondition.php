@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Enum;
+namespace SharedKernel\Enum;
 
 enum RoadCondition: string {
     case DRY = 'dry';

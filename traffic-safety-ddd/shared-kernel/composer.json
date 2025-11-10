@@ -1,0 +1,16 @@
+{
+  "name": "traffic-safety/shared-kernel",
+  "version": "1.0.0",
+  "description": "Shared kernel for traffic safety bounded contexts containing common contracts, DTOs, and enums.",
+  "type": "library",
+  "license": "proprietary",
+  "autoload": {
+    "psr-4": {
+      "SharedKernel\\": "src/"
+    }
+  },
+  "require": {
+    "php": "^8.4"
+  }
+}
+

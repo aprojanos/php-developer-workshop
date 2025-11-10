@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Enum;
+namespace SharedKernel\Enum;
 
 enum VisibilityCondition: string {
     case EXCELLENT = 'excellent';
