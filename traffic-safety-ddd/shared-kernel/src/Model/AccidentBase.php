@@ -1,6 +1,7 @@
 <?php
 namespace SharedKernel\Model;
 
+use SharedKernel\Domain\Aggregate\AggregateRoot;
 use SharedKernel\Enum\InjurySeverity;
 use SharedKernel\Enum\AccidentType;
 use SharedKernel\Enum\CollisionType;
@@ -10,7 +11,7 @@ use SharedKernel\Enum\RoadCondition;
 use SharedKernel\Enum\VisibilityCondition;
 use SharedKernel\DTO\AccidentLocationDTO;
 
-abstract class AccidentBase
+abstract class AccidentBase extends AggregateRoot
 {
     public function __construct(
         public readonly int $id,

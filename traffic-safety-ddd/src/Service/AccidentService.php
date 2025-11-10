@@ -5,6 +5,8 @@ use SharedKernel\Contract\AccidentRepositoryInterface;
 use SharedKernel\Contract\CostCalculatorStrategyInterface;
 use SharedKernel\Contract\LoggerInterface;
 use SharedKernel\Contract\NotifierInterface;
+use SharedKernel\Domain\Event\AccidentCreatedEvent;
+use SharedKernel\Domain\Event\EventBusInterface;
 use SharedKernel\Model\AccidentBase;
 use App\Service\SimpleCostCalculator;
 use SharedKernel\DTO\AccidentLocationDTO;
@@ -25,10 +27,13 @@ final class AccidentService
         private CostCalculatorStrategyInterface $costCalculator = new SimpleCostCalculator(),
         private ?LoggerInterface $logger = null,
         private ?NotifierInterface $notifier = null,
+        private ?EventBusInterface $eventBus = null,
     ) {}
 
     public function create(AccidentBase $accident): void
     {
+        $accident->recordEvent(new AccidentCreatedEvent($accident));
+
         $this->repository->save($accident);
 
         // log
@@ -46,6 +51,10 @@ final class AccidentService
             'type' => $accident->getType()->value,
             'cost' => $accident->cost,
         ]);
+
+        foreach ($accident->releaseEvents() as $event) {
+            $this->eventBus?->dispatch($event);
+        }
     }
 
     public function totalEstimatedCost(): float

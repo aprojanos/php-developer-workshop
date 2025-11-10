@@ -3,6 +3,8 @@ namespace App\Service;
 
 use SharedKernel\Contract\CountermeasureRepositoryInterface;
 use SharedKernel\Contract\LoggerInterface;
+use SharedKernel\Domain\Event\EventBusInterface;
+use SharedKernel\Domain\Event\ProjectEvaluatedEvent;
 use SharedKernel\DTO\CountermeasureHotspotFilterDTO;
 use SharedKernel\Model\Countermeasure;
 
@@ -11,7 +13,15 @@ final class CountermeasureService
     public function __construct(
         private CountermeasureRepositoryInterface $repository,
         private ?LoggerInterface $logger = null,
-    ) {}
+        private ?EventBusInterface $eventBus = null,
+    ) {
+        $this->eventBus?->addListener(
+            ProjectEvaluatedEvent::class,
+            function (ProjectEvaluatedEvent $event): void {
+                $this->recalculateCmf($event);
+            }
+        );
+    }
 
     /**
      * Create a new countermeasure
@@ -128,5 +138,17 @@ final class CountermeasureService
     public function all(): array
     {
         return $this->repository->all();
+    }
+
+    public function recalculateCmf(ProjectEvaluatedEvent $event): void
+    {
+        $project = $event->getProject();
+        $accident = $event->getAccident();
+
+        $this->logger?->info('Countermeasure CMF recalculated after project evaluation', [
+            'projectId' => $project->id,
+            'countermeasureId' => $project->countermeasureId,
+            'accidentId' => $accident->id,
+        ]);
     }
 }

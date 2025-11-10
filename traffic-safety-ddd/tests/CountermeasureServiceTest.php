@@ -2,16 +2,25 @@
 
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
+use App\Factory\AccidentFactory;
 use App\Service\CountermeasureService;
 use SharedKernel\Contract\CountermeasureRepositoryInterface;
 use SharedKernel\Contract\LoggerInterface;
+use SharedKernel\Domain\Event\DomainEventInterface;
+use SharedKernel\Domain\Event\EventBusInterface;
+use SharedKernel\Domain\Event\ProjectEvaluatedEvent;
 use SharedKernel\DTO\CountermeasureHotspotFilterDTO;
 use App\Factory\CountermeasureFactory;
 use SharedKernel\Model\Countermeasure;
+use SharedKernel\Model\Project;
 use SharedKernel\Enum\TargetType;
 use SharedKernel\Enum\CollisionType;
 use SharedKernel\Enum\InjurySeverity;
 use SharedKernel\Enum\LifecycleStatus;
+use SharedKernel\Enum\ProjectStatus;
+use SharedKernel\Enum\AccidentType;
+use SharedKernel\ValueObject\MonetaryAmount;
+use SharedKernel\ValueObject\TimePeriod;
 
 final class CountermeasureServiceTest extends TestCase
 {
@@ -252,6 +261,51 @@ final class CountermeasureServiceTest extends TestCase
         $this->assertSame($countermeasures, $service->all());
     }
 
+    public function testRecalculateCmfTriggeredByProjectEvaluation(): void
+    {
+        $project = new Project(
+            id: 300,
+            countermeasureId: 42,
+            hotspotId: 21,
+            period: new TimePeriod(
+                new \DateTimeImmutable('2025-03-01'),
+                new \DateTimeImmutable('2025-09-30')
+            ),
+            expectedCost: new MonetaryAmount(95000.0),
+            actualCost: new MonetaryAmount(91000.0),
+            status: ProjectStatus::IMPLEMENTED
+        );
+
+        $accident = AccidentFactory::create([
+            'id' => 808,
+            'occurredAt' => '2025-04-15 14:45:00',
+            'type' => AccidentType::INJURY->value,
+            'severity' => InjurySeverity::SEVERE->value,
+        ]);
+
+        /** @var CountermeasureRepositoryInterface&MockObject $repository */
+        $repository = $this->createMock(CountermeasureRepositoryInterface::class);
+
+        /** @var LoggerInterface&MockObject $logger */
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->once())
+            ->method('info')
+            ->with(
+                'Countermeasure CMF recalculated after project evaluation',
+                $this->callback(static function (array $context) use ($project, $accident): bool {
+                    return $context['projectId'] === $project->id
+                        && $context['countermeasureId'] === $project->countermeasureId
+                        && $context['accidentId'] === $accident->id;
+                })
+            );
+
+        $eventBus = new CountermeasureTestEventBus();
+
+        new CountermeasureService($repository, $logger, $eventBus);
+
+        $eventBus->dispatch(new ProjectEvaluatedEvent($project, $accident));
+    }
+
     /**
      * @param array<string, mixed> $overrides
      */
@@ -272,6 +326,26 @@ final class CountermeasureServiceTest extends TestCase
         ];
 
         return CountermeasureFactory::createFromArray(array_replace($defaults, $overrides));
+    }
+}
+
+final class CountermeasureTestEventBus implements EventBusInterface
+{
+    /**
+     * @var array<class-string<DomainEventInterface>, list<callable>>
+     */
+    private array $listeners = [];
+
+    public function dispatch(DomainEventInterface $event): void
+    {
+        foreach ($this->listeners[$event::class] ?? [] as $listener) {
+            $listener($event);
+        }
+    }
+
+    public function addListener(string $eventClass, callable $listener): void
+    {
+        $this->listeners[$eventClass][] = $listener;
     }
 }
 

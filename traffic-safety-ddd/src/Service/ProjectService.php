@@ -4,6 +4,9 @@ namespace App\Service;
 
 use SharedKernel\Contract\LoggerInterface;
 use SharedKernel\Contract\ProjectRepositoryInterface;
+use SharedKernel\Domain\Event\AccidentCreatedEvent;
+use SharedKernel\Domain\Event\EventBusInterface;
+use SharedKernel\Domain\Event\ProjectEvaluatedEvent;
 use SharedKernel\Enum\ProjectStatus;
 use SharedKernel\Model\Project;
 
@@ -12,7 +15,15 @@ final class ProjectService
     public function __construct(
         private ProjectRepositoryInterface $repository,
         private ?LoggerInterface $logger = null,
-    ) {}
+        private ?EventBusInterface $eventBus = null,
+    ) {
+        $this->eventBus?->addListener(
+            AccidentCreatedEvent::class,
+            function (AccidentCreatedEvent $event): void {
+                $this->evaluateProjects($event);
+            }
+        );
+    }
 
     public function create(Project $project): void
     {
@@ -129,6 +140,21 @@ final class ProjectService
         ));
 
         return $updatedProject;
+    }
+
+    public function evaluateProjects(AccidentCreatedEvent $event): void
+    {
+        $accident = $event->getAccident();
+
+        $this->logger?->info('Projects evaluated after accident', [
+            'accidentId' => $accident->id,
+            'accidentType' => $accident->getType()->value,
+            'accidentOccurredAt' => $accident->occurredAt->format('c'),
+        ]);
+
+        foreach ($this->repository->all() as $project) {
+            $this->eventBus?->dispatch(new ProjectEvaluatedEvent($project, $accident));
+        }
     }
 
     /**
