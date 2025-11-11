@@ -20,18 +20,18 @@ final class RoadNetworkController extends BaseController
     public function register(Router $router): void
     {
         // Intersections
-        $router->add('GET', '/api/road-network/intersections', fn(Request $request): Response => $this->listIntersections());
-        $router->add('GET', '/api/road-network/intersections/{id}', fn(Request $request): Response => $this->getIntersection($request));
-        $router->add('POST', '/api/road-network/intersections', fn(Request $request): Response => $this->createIntersection($request));
-        $router->add('PUT', '/api/road-network/intersections/{id}', fn(Request $request): Response => $this->updateIntersection($request));
-        $router->add('DELETE', '/api/road-network/intersections/{id}', fn(Request $request): Response => $this->deleteIntersection($request));
+        $router->add('GET', '/api/road-network/intersections', fn(Request $request): Response => $this->listIntersections(), true, self::ROLE_VIEW);
+        $router->add('GET', '/api/road-network/intersections/{id}', fn(Request $request): Response => $this->getIntersection($request), true, self::ROLE_VIEW);
+        $router->add('POST', '/api/road-network/intersections', fn(Request $request): Response => $this->createIntersection($request), true, self::ROLE_MANAGER);
+        $router->add('PUT', '/api/road-network/intersections/{id}', fn(Request $request): Response => $this->updateIntersection($request), true, self::ROLE_MANAGER);
+        $router->add('DELETE', '/api/road-network/intersections/{id}', fn(Request $request): Response => $this->deleteIntersection($request), true, self::ROLE_MANAGER);
 
         // Road segments
-        $router->add('GET', '/api/road-network/segments', fn(Request $request): Response => $this->listRoadSegments());
-        $router->add('GET', '/api/road-network/segments/{id}', fn(Request $request): Response => $this->getRoadSegment($request));
-        $router->add('POST', '/api/road-network/segments', fn(Request $request): Response => $this->createRoadSegment($request));
-        $router->add('PUT', '/api/road-network/segments/{id}', fn(Request $request): Response => $this->updateRoadSegment($request));
-        $router->add('DELETE', '/api/road-network/segments/{id}', fn(Request $request): Response => $this->deleteRoadSegment($request));
+        $router->add('GET', '/api/road-network/segments', fn(Request $request): Response => $this->listRoadSegments(), true, self::ROLE_VIEW);
+        $router->add('GET', '/api/road-network/segments/{id}', fn(Request $request): Response => $this->getRoadSegment($request), true, self::ROLE_VIEW);
+        $router->add('POST', '/api/road-network/segments', fn(Request $request): Response => $this->createRoadSegment($request), true, self::ROLE_MANAGER);
+        $router->add('PUT', '/api/road-network/segments/{id}', fn(Request $request): Response => $this->updateRoadSegment($request), true, self::ROLE_MANAGER);
+        $router->add('DELETE', '/api/road-network/segments/{id}', fn(Request $request): Response => $this->deleteRoadSegment($request), true, self::ROLE_MANAGER);
     }
 
     private function listIntersections(): Response

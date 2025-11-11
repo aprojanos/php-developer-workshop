@@ -21,12 +21,12 @@ final class HotspotController extends BaseController
 {
     public function register(Router $router): void
     {
-        $router->add('POST', '/api/hotspots', fn(Request $request): Response => $this->createHotspot($request));
-        $router->add('GET', '/api/hotspots/{id}', fn(Request $request): Response => $this->getHotspot($request));
-        $router->add('PUT', '/api/hotspots/{id}', fn(Request $request): Response => $this->updateHotspot($request));
-        $router->add('DELETE', '/api/hotspots/{id}', fn(Request $request): Response => $this->deleteHotspot($request));
-        $router->add('POST', '/api/hotspots/search', fn(Request $request): Response => $this->searchHotspots($request));
-        $router->add('POST', '/api/hotspots/screening', fn(Request $request): Response => $this->screenHotspots($request));
+        $router->add('POST', '/api/hotspots', fn(Request $request): Response => $this->createHotspot($request), true, self::ROLE_MANAGER);
+        $router->add('GET', '/api/hotspots/{id}', fn(Request $request): Response => $this->getHotspot($request), true, self::ROLE_VIEW);
+        $router->add('PUT', '/api/hotspots/{id}', fn(Request $request): Response => $this->updateHotspot($request), true, self::ROLE_MANAGER);
+        $router->add('DELETE', '/api/hotspots/{id}', fn(Request $request): Response => $this->deleteHotspot($request), true, self::ROLE_MANAGER);
+        $router->add('POST', '/api/hotspots/search', fn(Request $request): Response => $this->searchHotspots($request), true, self::ROLE_ANALYST);
+        $router->add('POST', '/api/hotspots/screening', fn(Request $request): Response => $this->screenHotspots($request), true, self::ROLE_ANALYST);
     }
 
     private function createHotspot(Request $request): Response

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Security;
 
+use DateTimeImmutable;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use SharedKernel\Model\User;
@@ -16,20 +17,25 @@ final class JwtManager
         private readonly int $defaultTtlSeconds = 3600
     ) {}
 
-    public function issueToken(User $user, ?int $ttlSeconds = null): string
+    public function issueToken(User $user, ?int $ttlSeconds = null, ?string &$tokenId = null, ?DateTimeImmutable &$expiresAt = null): string
     {
         $issuedAt = time();
-        $expiresAt = $issuedAt + ($ttlSeconds ?? $this->defaultTtlSeconds);
+        $expiresTimestamp = $issuedAt + ($ttlSeconds ?? $this->defaultTtlSeconds);
+        $tokenIdValue = bin2hex(random_bytes(32));
 
         $payload = [
             'iss' => $_ENV['APP_URL'] ?? 'traffic-safety-api',
             'sub' => $user->id,
             'iat' => $issuedAt,
-            'exp' => $expiresAt,
+            'exp' => $expiresTimestamp,
+            'jti' => $tokenIdValue,
             'email' => $user->email,
             'role' => $user->role->value,
             'isActive' => $user->isActive,
         ];
+
+        $tokenId = $tokenIdValue;
+        $expiresAt = (new DateTimeImmutable())->setTimestamp($expiresTimestamp);
 
         return JWT::encode($payload, $this->secret, $this->algorithm);
     }

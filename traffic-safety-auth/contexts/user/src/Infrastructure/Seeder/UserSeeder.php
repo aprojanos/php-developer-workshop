@@ -50,7 +50,7 @@ final class UserSeeder
         $role = $roles[random_int(0, count($roles) - 1)];
 
         $firstNames = ['Péter', 'Sándor', 'Dániel', 'Csaba', 'Gergő', 'Zoltán', 'János'];
-        $lastNames = ['Farkas', 'Mihály', 'Nikolausz', 'Schwarcz', 'Tolnai', 'Vass', 'Apró'];
+        $lastNames = ['Farkas', 'Mihály', 'Nagy', 'Nikolausz', 'Schwarcz', 'Tolnai', 'Vass', 'Apró'];
 
         $firstName = $firstNames[array_rand($firstNames)];
         $lastName = $lastNames[array_rand($lastNames)];
@@ -67,7 +67,8 @@ final class UserSeeder
             firstName: $firstName,
             lastName: $lastName,
             role: $role,
-            password: sprintf('%s%s%d!', substr($firstName, 0, 2), substr($lastName, 0, 2), random_int(10, 99))
+            // password: sprintf('%s%s%d!', substr($firstName, 0, 2), substr($lastName, 0, 2), random_int(10, 99))
+            password: 'DmsOne123!'
         );
     }
 

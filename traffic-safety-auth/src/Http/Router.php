@@ -21,11 +21,15 @@ final class Router
      */
     private array $routes = [];
 
-    public function add(string $method, string $pattern, callable $handler): void
+    /**
+     * @param callable(Request, Container): Response $handler
+     * @param list<string>|null $allowedRoles
+     */
+    public function add(string $method, string $pattern, callable $handler, bool $requiresAuth = true, ?array $allowedRoles = null): void
     {
         $method = strtoupper($method);
         $this->routes[$method] ??= [];
-        $this->routes[$method][] = $this->compileRoute($pattern, $handler);
+        $this->routes[$method][] = $this->compileRoute($pattern, $handler, $requiresAuth, $allowedRoles);
     }
 
     public function register(Container $container): void
@@ -69,18 +73,30 @@ final class Router
 
             $requestWithParams = $request->withRouteParams($routeParams);
 
+            if ($route->requiresAuth) {
+                $requestWithParams = \App\Security\AuthGuard::ensureAuthenticated(
+                    $requestWithParams,
+                    $container,
+                    $route->allowedRoles
+                );
+            }
+
             return ($route->handler)($requestWithParams, $container);
         }
 
         throw new HttpException(sprintf('No route matched %s %s', $method, $path), 404);
     }
 
-    private function compileRoute(string $pattern, callable $handler): RouteDefinition
+    /**
+     * @param callable(Request, Container): Response $handler
+     * @param list<string>|null $allowedRoles
+     */
+    private function compileRoute(string $pattern, callable $handler, bool $requiresAuth, ?array $allowedRoles): RouteDefinition
     {
         $variableNames = [];
-        $regex = preg_replace_callback('/\{([a-zA-Z0-9_]+)\}/', static function (array $matches) use (&$variableNames): string {
+        $regex = preg_replace_callback('/\{(\w+)\}/', static function (array $matches) use (&$variableNames): string {
             $variableNames[] = $matches[1];
-            return '([a-zA-Z0-9\-_]+)';
+            return '(\w+)';
         }, $pattern) ?? $pattern;
 
         $regex = '#^' . $regex . '$#';
@@ -88,7 +104,9 @@ final class Router
         return new RouteDefinition(
             regex: $regex,
             variables: $variableNames,
-            handler: Closure::fromCallable($handler)
+            handler: Closure::fromCallable($handler),
+            requiresAuth: $requiresAuth,
+            allowedRoles: $allowedRoles !== null ? array_values(array_unique(array_map('strtolower', $allowedRoles))) : null
         );
     }
 }
@@ -101,11 +119,15 @@ final class RouteDefinition
     /**
      * @param list<string> $variables
      * @param callable(Request, Container): Response $handler
+     * @param callable(Request, Container): Response $handler
+     * @param list<string>|null $allowedRoles
      */
     public function __construct(
         public readonly string $regex,
         public readonly array $variables,
-        public readonly Closure $handler
+        public readonly Closure $handler,
+        public readonly bool $requiresAuth,
+        public readonly ?array $allowedRoles
     ) {}
 }
 

@@ -35,7 +35,7 @@ final class AccidentSeeder
             $this->nextId = 0;
         }
 
-        if ($this->roadSegments === [] && $this->intersections === []) {
+        if (($pdoCount > 0 || $injuryCount > 0) && $this->roadSegments === [] && $this->intersections === []) {
             throw new MissingAccidentLocationReferenceException('Cannot seed accidents without existing road segments or intersections.');
         }
 

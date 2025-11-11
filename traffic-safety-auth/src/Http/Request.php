@@ -19,7 +19,22 @@ final class Request
         private readonly array $queryParams,
         private readonly array $body,
         private array $routeParams = []
-    ) {}
+    ) {
+        $this->normalizedHeaders = [];
+        foreach ($headers as $header => $value) {
+            $this->normalizedHeaders[strtolower($header)] = $value;
+        }
+    }
+
+    /**
+     * @var array<string, string>
+     */
+    private array $normalizedHeaders = [];
+
+    /**
+     * @var array<string, mixed>
+     */
+    private array $attributes = [];
 
     public function getMethod(): string
     {
@@ -37,6 +52,11 @@ final class Request
     public function getHeaders(): array
     {
         return $this->headers;
+    }
+
+    public function getHeader(string $name): ?string
+    {
+        return $this->normalizedHeaders[strtolower($name)] ?? null;
     }
 
     /**
@@ -74,6 +94,19 @@ final class Request
         $clone->routeParams = $routeParams;
 
         return $clone;
+    }
+
+    public function withAttribute(string $name, mixed $value): self
+    {
+        $clone = clone $this;
+        $clone->attributes[$name] = $value;
+
+        return $clone;
+    }
+
+    public function getAttribute(string $name, mixed $default = null): mixed
+    {
+        return $this->attributes[$name] ?? $default;
     }
 
     public function json(string $key, mixed $default = null): mixed

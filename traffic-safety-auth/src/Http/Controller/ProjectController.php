@@ -20,16 +20,16 @@ final class ProjectController extends BaseController
 {
     public function register(Router $router): void
     {
-        $router->add('POST', '/api/projects', fn(Request $request): Response => $this->createProject($request));
-        $router->add('GET', '/api/projects', fn(Request $request): Response => $this->listProjects());
-        $router->add('GET', '/api/projects/{id}', fn(Request $request): Response => $this->getProject($request));
-        $router->add('GET', '/api/projects/hotspot/{hotspotId}', fn(Request $request): Response => $this->projectsByHotspot($request));
-        $router->add('GET', '/api/projects/countermeasure/{countermeasureId}', fn(Request $request): Response => $this->projectsByCountermeasure($request));
-        $router->add('GET', '/api/projects/status/{status}', fn(Request $request): Response => $this->projectsByStatus($request));
-        $router->add('PUT', '/api/projects/{id}', fn(Request $request): Response => $this->updateProject($request));
-        $router->add('DELETE', '/api/projects/{id}', fn(Request $request): Response => $this->deleteProject($request));
-        $router->add('POST', '/api/projects/{id}/status', fn(Request $request): Response => $this->transitionStatus($request));
-        $router->add('POST', '/api/projects/evaluate', fn(Request $request): Response => $this->evaluateProjects($request));
+        $router->add('POST', '/api/projects', fn(Request $request): Response => $this->createProject($request), true, self::ROLE_MANAGER);
+        $router->add('GET', '/api/projects', fn(Request $request): Response => $this->listProjects(), true, self::ROLE_VIEW);
+        $router->add('GET', '/api/projects/{id}', fn(Request $request): Response => $this->getProject($request), true, self::ROLE_VIEW);
+        $router->add('GET', '/api/projects/hotspot/{hotspotId}', fn(Request $request): Response => $this->projectsByHotspot($request), true, self::ROLE_VIEW);
+        $router->add('GET', '/api/projects/countermeasure/{countermeasureId}', fn(Request $request): Response => $this->projectsByCountermeasure($request), true, self::ROLE_VIEW);
+        $router->add('GET', '/api/projects/status/{status}', fn(Request $request): Response => $this->projectsByStatus($request), true, self::ROLE_VIEW);
+        $router->add('PUT', '/api/projects/{id}', fn(Request $request): Response => $this->updateProject($request), true, self::ROLE_MANAGER);
+        $router->add('DELETE', '/api/projects/{id}', fn(Request $request): Response => $this->deleteProject($request), true, self::ROLE_MANAGER);
+        $router->add('POST', '/api/projects/{id}/status', fn(Request $request): Response => $this->transitionStatus($request), true, self::ROLE_MANAGER);
+        $router->add('POST', '/api/projects/evaluate', fn(Request $request): Response => $this->evaluateProjects($request), true, self::ROLE_ANALYST);
     }
 
     private function createProject(Request $request): Response

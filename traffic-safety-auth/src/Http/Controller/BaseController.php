@@ -9,9 +9,16 @@ use App\Http\HttpException;
 use App\Http\JsonResponse;
 use App\Http\Request;
 use App\Http\Response;
+use App\Security\AuthGuard;
+use App\Security\AuthenticatedUser;
 
 abstract class BaseController implements ControllerInterface
 {
+    protected const ROLE_VIEW = ['viewer', 'analyst', 'manager', 'admin'];
+    protected const ROLE_ANALYST = ['analyst', 'manager', 'admin'];
+    protected const ROLE_MANAGER = ['manager', 'admin'];
+    protected const ROLE_ADMIN = ['admin'];
+
     public function __construct(
         protected readonly Container $container
     ) {}
@@ -69,6 +76,29 @@ abstract class BaseController implements ControllerInterface
         }
 
         return $value;
+    }
+
+    /**
+     * @param list<string>|null $allowedRoles
+     */
+    protected function requireAuthenticatedUser(Request $request, ?array $allowedRoles = null): AuthenticatedUser
+    {
+        $authUser = $request->getAttribute(AuthGuard::ATTRIBUTE_AUTH_USER);
+        if (!$authUser instanceof AuthenticatedUser) {
+            // Fallback safeguard: attempt to authenticate now.
+            $request = AuthGuard::ensureAuthenticated($request, $this->container, $allowedRoles);
+            $authUser = $request->getAttribute(AuthGuard::ATTRIBUTE_AUTH_USER);
+        }
+
+        if (!$authUser instanceof AuthenticatedUser) {
+            throw new HttpException('Authentication is required.', 401);
+        }
+
+        if ($allowedRoles !== null && !$authUser->hasAnyRole($allowedRoles)) {
+            throw new HttpException('You are not allowed to access this resource.', 403);
+        }
+
+        return $authUser;
     }
 }
 

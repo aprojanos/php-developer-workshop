@@ -16,14 +16,14 @@ final class AccidentController extends BaseController
 {
     public function register(Router $router): void
     {
-        $router->add('GET', '/api/accidents', fn(Request $request): Response => $this->listAccidents());
-        $router->add('GET', '/api/accidents/total-estimated-cost', fn(Request $request): Response => $this->totalEstimatedCost());
-        $router->add('GET', '/api/accidents/{id}', fn(Request $request): Response => $this->getAccident($request));
-        $router->add('POST', '/api/accidents', fn(Request $request): Response => $this->createAccident($request));
-        $router->add('PUT', '/api/accidents/{id}', fn(Request $request): Response => $this->updateAccident($request));
-        $router->add('DELETE', '/api/accidents/{id}', fn(Request $request): Response => $this->deleteAccident($request));
-        $router->add('POST', '/api/accidents/calculate-total-cost', fn(Request $request): Response => $this->calculateTotalCost($request));
-        $router->add('POST', '/api/accidents/search', fn(Request $request): Response => $this->searchAccidents($request));
+        $router->add('GET', '/api/accidents', fn(Request $request): Response => $this->listAccidents(), true, self::ROLE_VIEW);
+        $router->add('GET', '/api/accidents/total-estimated-cost', fn(Request $request): Response => $this->totalEstimatedCost(), true, self::ROLE_VIEW);
+        $router->add('GET', '/api/accidents/{id}', fn(Request $request): Response => $this->getAccident($request), true, self::ROLE_VIEW);
+        $router->add('POST', '/api/accidents', fn(Request $request): Response => $this->createAccident($request), true, self::ROLE_ANALYST);
+        $router->add('PUT', '/api/accidents/{id}', fn(Request $request): Response => $this->updateAccident($request), true, self::ROLE_ANALYST);
+        $router->add('DELETE', '/api/accidents/{id}', fn(Request $request): Response => $this->deleteAccident($request), true, self::ROLE_MANAGER);
+        $router->add('POST', '/api/accidents/calculate-total-cost', fn(Request $request): Response => $this->calculateTotalCost($request), true, self::ROLE_ANALYST);
+        $router->add('POST', '/api/accidents/search', fn(Request $request): Response => $this->searchAccidents($request), true, self::ROLE_VIEW);
     }
 
     private function listAccidents(): Response

@@ -26,13 +26,13 @@ final class CountermeasureController extends BaseController
 {
     public function register(Router $router): void
     {
-        $router->add('POST', '/api/countermeasures', fn(Request $request): Response => $this->createCountermeasure($request));
-        $router->add('GET', '/api/countermeasures', fn(Request $request): Response => $this->listCountermeasures());
-        $router->add('GET', '/api/countermeasures/{id}', fn(Request $request): Response => $this->getCountermeasure($request));
-        $router->add('POST', '/api/countermeasures/hotspot', fn(Request $request): Response => $this->findForHotspot($request));
-        $router->add('PUT', '/api/countermeasures/{id}', fn(Request $request): Response => $this->updateCountermeasure($request));
-        $router->add('DELETE', '/api/countermeasures/{id}', fn(Request $request): Response => $this->deleteCountermeasure($request));
-        $router->add('POST', '/api/countermeasures/recalculate-cmf', fn(Request $request): Response => $this->recalculateCmf($request));
+        $router->add('POST', '/api/countermeasures', fn(Request $request): Response => $this->createCountermeasure($request), true, self::ROLE_MANAGER);
+        $router->add('GET', '/api/countermeasures', fn(Request $request): Response => $this->listCountermeasures(), true, self::ROLE_VIEW);
+        $router->add('GET', '/api/countermeasures/{id}', fn(Request $request): Response => $this->getCountermeasure($request), true, self::ROLE_VIEW);
+        $router->add('POST', '/api/countermeasures/hotspot', fn(Request $request): Response => $this->findForHotspot($request), true, self::ROLE_ANALYST);
+        $router->add('PUT', '/api/countermeasures/{id}', fn(Request $request): Response => $this->updateCountermeasure($request), true, self::ROLE_MANAGER);
+        $router->add('DELETE', '/api/countermeasures/{id}', fn(Request $request): Response => $this->deleteCountermeasure($request), true, self::ROLE_MANAGER);
+        $router->add('POST', '/api/countermeasures/recalculate-cmf', fn(Request $request): Response => $this->recalculateCmf($request), true, self::ROLE_ANALYST);
     }
 
     private function createCountermeasure(Request $request): Response

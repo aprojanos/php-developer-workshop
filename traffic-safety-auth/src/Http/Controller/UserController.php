@@ -16,16 +16,16 @@ final class UserController extends BaseController
 {
     public function register(Router $router): void
     {
-        $router->add('POST', '/api/users', fn(Request $request): Response => $this->registerUser($request));
-        $router->add('GET', '/api/users', fn(Request $request): Response => $this->listUsers());
-        $router->add('GET', '/api/users/{id}', fn(Request $request): Response => $this->getUser($request));
-        $router->add('GET', '/api/users/by-email', fn(Request $request): Response => $this->getUserByEmail($request));
-        $router->add('PUT', '/api/users/{id}', fn(Request $request): Response => $this->updateUser($request));
-        $router->add('POST', '/api/users/{id}/role', fn(Request $request): Response => $this->changeRole($request));
-        $router->add('POST', '/api/users/{id}/record-login', fn(Request $request): Response => $this->recordLogin($request));
-        $router->add('POST', '/api/users/{id}/activate', fn(Request $request): Response => $this->activateUser($request));
-        $router->add('POST', '/api/users/{id}/deactivate', fn(Request $request): Response => $this->deactivateUser($request));
-        $router->add('DELETE', '/api/users/{id}', fn(Request $request): Response => $this->deleteUser($request));
+        $router->add('POST', '/api/users', fn(Request $request): Response => $this->registerUser($request), true, self::ROLE_ADMIN);
+        $router->add('GET', '/api/users', fn(Request $request): Response => $this->listUsers(), true, self::ROLE_ADMIN);
+        $router->add('GET', '/api/users/{id}', fn(Request $request): Response => $this->getUser($request), true, self::ROLE_ADMIN);
+        $router->add('GET', '/api/users/by-email', fn(Request $request): Response => $this->getUserByEmail($request), true, self::ROLE_ADMIN);
+        $router->add('PUT', '/api/users/{id}', fn(Request $request): Response => $this->updateUser($request), true, self::ROLE_ADMIN);
+        $router->add('POST', '/api/users/{id}/role', fn(Request $request): Response => $this->changeRole($request), true, self::ROLE_ADMIN);
+        $router->add('POST', '/api/users/{id}/record-login', fn(Request $request): Response => $this->recordLogin($request), true, self::ROLE_ADMIN);
+        $router->add('POST', '/api/users/{id}/activate', fn(Request $request): Response => $this->activateUser($request), true, self::ROLE_ADMIN);
+        $router->add('POST', '/api/users/{id}/deactivate', fn(Request $request): Response => $this->deactivateUser($request), true, self::ROLE_ADMIN);
+        $router->add('DELETE', '/api/users/{id}', fn(Request $request): Response => $this->deleteUser($request), true, self::ROLE_ADMIN);
     }
 
     private function registerUser(Request $request): Response

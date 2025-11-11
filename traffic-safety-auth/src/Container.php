@@ -9,7 +9,9 @@ use AccidentContext\Domain\Service\SimpleCostCalculator;
 use AccidentContext\Infrastructure\Repository\Decorator\CachingAccidentRepositoryDecorator;
 use AccidentContext\Infrastructure\Repository\PdoAccidentRepository;
 use App\Logger\FileLogger;
+use App\Security\AccessTokenRegistry;
 use App\Security\JwtManager;
+use App\Security\RefreshTokenManager;
 use CountermeasureContext\Application\CountermeasureService;
 use CountermeasureContext\Infrastructure\Repository\PdoCountermeasureRepository;
 use HotspotContext\Application\HotspotService;
@@ -58,6 +60,8 @@ final class Container
     private ?NotificationService $notificationService = null;
     private ?UserService $userService = null;
     private ?JwtManager $jwtManager = null;
+    private ?RefreshTokenManager $refreshTokenManager = null;
+    private ?AccessTokenRegistry $accessTokenRegistry = null;
 
     public function __construct(
         private readonly string $projectRoot
@@ -252,6 +256,36 @@ final class Container
         }
 
         return $this->jwtManager;
+    }
+
+    public function getRefreshTokenManager(): RefreshTokenManager
+    {
+        if ($this->refreshTokenManager === null) {
+            $ttl = (int)($_ENV['REFRESH_TOKEN_TTL'] ?? 1209600);
+            if ($ttl <= 0) {
+                $ttl = 1209600;
+            }
+
+            $this->refreshTokenManager = new RefreshTokenManager(
+                pdo: $this->getPdo(),
+                logger: $this->getLogger(),
+                defaultTtlSeconds: $ttl,
+            );
+        }
+
+        return $this->refreshTokenManager;
+    }
+
+    public function getAccessTokenRegistry(): AccessTokenRegistry
+    {
+        if ($this->accessTokenRegistry === null) {
+            $this->accessTokenRegistry = new AccessTokenRegistry(
+                pdo: $this->getPdo(),
+                logger: $this->getLogger(),
+            );
+        }
+
+        return $this->accessTokenRegistry;
     }
 }
 
