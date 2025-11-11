@@ -11,8 +11,6 @@ use App\Http\Controller\HotspotController;
 use App\Http\Controller\ProjectController;
 use App\Http\Controller\RoadNetworkController;
 use Closure;
-use App\Http\Controller\UserController;
-use App\Http\Controller\AuthController;
 
 final class Router
 {
@@ -31,8 +29,6 @@ final class Router
     public function register(Container $container): void
     {
         $controllers = [
-            new AuthController($container),
-            new UserController($container),
             new AccidentController($container),
             new ProjectController($container),
             new CountermeasureController($container),

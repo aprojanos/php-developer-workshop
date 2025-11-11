@@ -1,4 +1,3 @@
-php database/seed_users.php --count=6
 php database/seed_projects.php --count=0
 php database/seed_hotspots.php --count=0
 php database/seed_accidents.php --pdo=0 --injury=0

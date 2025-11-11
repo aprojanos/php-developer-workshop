@@ -648,33 +648,6 @@
             }
         },
         {
-            "name": "traffic-safety/user-context",
-            "version": "1.0.0",
-            "dist": {
-                "type": "path",
-                "url": "contexts/user",
-                "reference": "b18336201e5d3f58378253c949f58039a7f4ce76"
-            },
-            "require": {
-                "php": "^8.4",
-                "traffic-safety/shared-kernel": "^1.0"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "UserContext\\": "src/"
-                }
-            },
-            "license": [
-                "proprietary"
-            ],
-            "description": "User management bounded context for the traffic safety system.",
-            "transport-options": {
-                "symlink": true,
-                "relative": true
-            }
-        },
-        {
             "name": "vlucas/phpdotenv",
             "version": "v5.6.2",
             "source": {

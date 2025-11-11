@@ -11,7 +11,6 @@ use SharedKernel\Model\Hotspot;
 use SharedKernel\Model\Intersection;
 use SharedKernel\Model\Project;
 use SharedKernel\Model\RoadSegment;
-use SharedKernel\Model\User;
 use SharedKernel\ValueObject\ObservedCrashes;
 use SharedKernel\ValueObject\TimePeriod;
 use SharedKernel\ValueObject\MonetaryAmount;
@@ -206,33 +205,6 @@ final class DomainSerializer
         return array_map([self::class, 'hotspot'], $hotspots);
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    public static function user(User $user): array
-    {
-        return [
-            'id' => $user->id,
-            'email' => $user->email,
-            'firstName' => $user->firstName,
-            'lastName' => $user->lastName,
-            'displayName' => $user->displayName(),
-            'role' => $user->role->value,
-            'isActive' => $user->isActive,
-            'createdAt' => $user->createdAt->format('c'),
-            'updatedAt' => $user->updatedAt->format('c'),
-            'lastLoginAt' => $user->lastLoginAt?->format('c'),
-        ];
-    }
-
-    /**
-     * @param User[] $users
-     * @return list<array<string, mixed>>
-     */
-    public static function users(array $users): array
-    {
-        return array_map([self::class, 'user'], $users);
-    }
 
     /**
      * @return array<string, mixed>
