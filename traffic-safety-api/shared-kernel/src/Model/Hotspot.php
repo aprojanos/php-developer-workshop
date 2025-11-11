@@ -1,0 +1,25 @@
+<?php
+
+namespace SharedKernel\Model;
+
+use SharedKernel\Enum\HotspotStatus;
+use SharedKernel\ValueObject\TimePeriod;
+use SharedKernel\ValueObject\ObservedCrashes;
+
+final readonly class Hotspot
+{
+    /**
+     * @param array<string, mixed>|null $screeningParameters
+     */
+    public function __construct(
+        public int $id,
+        public RoadSegment|Intersection $location,
+        public TimePeriod $period,
+        public ObservedCrashes $observedCrashes,
+        public float $expectedCrashes,
+        public float $riskScore,
+        public HotspotStatus $status,
+        public ?array $screeningParameters = null
+    ) {}
+}
+

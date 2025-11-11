@@ -1,0 +1,17 @@
+{
+  "name": "traffic-safety/road-network-context",
+  "description": "Road network bounded context for traffic safety system.",
+  "version": "1.0.0",
+  "type": "library",
+  "license": "proprietary",
+  "autoload": {
+    "psr-4": {
+      "RoadNetworkContext\\": "src/"
+    }
+  },
+  "require": {
+    "php": "^8.4",
+    "traffic-safety/shared-kernel": "^1.0"
+  }
+}
+
