@@ -2,8 +2,14 @@
 namespace App\Service;
 
 use SharedKernel\Contract\NotifierInterface;
+use SharedKernel\Domain\Event\AccidentCreatedEvent;
 use SharedKernel\Domain\Event\DomainEventInterface;
 use SharedKernel\Domain\Event\EventBusInterface;
+use SharedKernel\Domain\Event\HotspotCreatedEvent;
+use SharedKernel\Domain\Event\ProjectApprovedEvent;
+use SharedKernel\Domain\Event\ProjectEvaluatedEvent;
+use SharedKernel\Domain\Event\ProjectImplementedEvent;
+use SharedKernel\Domain\Event\ProjectProposedEvent;
 
 final class NotificationService
 {
@@ -25,8 +31,7 @@ final class NotificationService
             'event' => $event::class,
             'occurredOn' => $event->occurredOn()->format('c'),
         ];
-
-        if (method_exists($event, 'getAccident')) {
+        if ($event instanceof AccidentCreatedEvent || $event instanceof ProjectEvaluatedEvent) {
             $accident = $event->getAccident();
             $payload['accident'] = [
                 'id' => $accident->id,
@@ -35,12 +40,25 @@ final class NotificationService
             ];
         }
 
-        if (method_exists($event, 'getProject')) {
+        if ($event instanceof ProjectProposedEvent
+            || $event instanceof ProjectApprovedEvent
+            || $event instanceof ProjectImplementedEvent
+            || $event instanceof ProjectEvaluatedEvent
+        ) {
             $project = $event->getProject();
             $payload['project'] = [
                 'id' => $project->id,
                 'countermeasureId' => $project->countermeasureId,
                 'status' => $project->status->value,
+            ];
+        }
+
+        if ($event instanceof HotspotCreatedEvent) {
+            $hotspot = $event->getHotspot();
+            $payload['hotspot'] = [
+                'id' => $hotspot->id,
+                'status' => $hotspot->status->value,
+                'riskScore' => $hotspot->riskScore,
             ];
         }
 

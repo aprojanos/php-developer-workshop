@@ -3,6 +3,8 @@ namespace App\Service;
 
 use SharedKernel\Contract\HotspotRepositoryInterface;
 use SharedKernel\Contract\LoggerInterface;
+use SharedKernel\Domain\Event\EventBusInterface;
+use SharedKernel\Domain\Event\HotspotCreatedEvent;
 use SharedKernel\Model\Hotspot;
 use SharedKernel\DTO\HotspotSearchDTO;
 use SharedKernel\DTO\HotspotScreeningDTO;
@@ -20,6 +22,7 @@ final class HotspotService
         private HotspotRepositoryInterface $repository,
         private AccidentService $accidentService,
         private ?LoggerInterface $logger = null,
+        private ?EventBusInterface $eventBus = null,
     ) {}
 
     /**
@@ -37,6 +40,8 @@ final class HotspotService
             'status' => $hotspot->status->value,
             'riskScore' => $hotspot->riskScore,
         ]);
+
+        $this->eventBus?->dispatch(new HotspotCreatedEvent($hotspot));
     }
 
     /**

@@ -23,6 +23,8 @@ use SharedKernel\Model\Hotspot;
 use SharedKernel\Model\RoadSegment;
 use SharedKernel\Model\AccidentBase;
 use App\Factory\AccidentFactory;
+use SharedKernel\Domain\Event\HotspotCreatedEvent;
+use SharedKernel\Domain\Event\InMemoryEventBus;
 
 final class HotspotServiceTest extends TestCase
 {
@@ -49,8 +51,16 @@ final class HotspotServiceTest extends TestCase
                 })
             );
 
-        $service = new HotspotService($repository, $this->createAccidentService(), $logger);
+        $eventBus = new InMemoryEventBus();
+
+        $service = new HotspotService($repository, $this->createAccidentService(), $logger, $eventBus);
         $service->create($hotspot);
+
+        $this->assertCount(1, $eventBus->dispatchedEvents);
+        $event = $eventBus->dispatchedEvents[0];
+        $this->assertInstanceOf(HotspotCreatedEvent::class, $event);
+        /** @var HotspotCreatedEvent $event */
+        $this->assertSame($hotspot, $event->getHotspot());
     }
 
     public function testFindByIdReturnsHotspotAndLogs(): void
