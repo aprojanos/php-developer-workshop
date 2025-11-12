@@ -1,0 +1,1810 @@
+openapi: 3.0.0
+info:
+  title: 'Traffic Safety Platform API'
+  description: 'API documentation for the Traffic Safety decision management system.'
+  version: 1.0.0
+servers:
+  -
+    url: /
+    description: 'Relative base URL'
+paths:
+  /api/accidents:
+    get:
+      tags:
+        - Accidents
+      summary: 'List all recorded accidents.'
+      operationId: listAccidents
+      responses:
+        '200':
+          description: 'Collection of accidents.'
+          content:
+            application/json:
+              schema:
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Accident' } }
+                type: object
+      security:
+        -
+          bearerAuth: []
+    post:
+      tags:
+        - Accidents
+      summary: 'Create a new accident record.'
+      operationId: createAccident
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              description: 'Accident payload as accepted by the AccidentFactory.'
+              properties:
+                id:
+                  type: integer
+                  format: int64
+              type: object
+              additionalProperties: true
+      responses:
+        '201':
+          description: 'Accident created.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Accident'
+        '422':
+          description: 'Validation error.'
+      security:
+        -
+          bearerAuth: []
+  '/api/accidents/{id}':
+    get:
+      tags:
+        - Accidents
+      summary: 'Retrieve a single accident by its identifier.'
+      operationId: getAccident
+      parameters:
+        -
+          name: id
+          in: path
+          description: 'Accident identifier'
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 'Accident found.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Accident'
+        '404':
+          description: 'Accident not found.'
+      security:
+        -
+          bearerAuth: []
+    put:
+      tags:
+        - Accidents
+      summary: 'Update an existing accident record.'
+      operationId: updateAccident
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                id:
+                  type: integer
+                  format: int64
+                  nullable: true
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: 'Accident updated.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Accident'
+        '404':
+          description: 'Accident not found.'
+      security:
+        -
+          bearerAuth: []
+    delete:
+      tags:
+        - Accidents
+      summary: 'Delete an accident.'
+      operationId: deleteAccident
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: 'Accident deleted.'
+      security:
+        -
+          bearerAuth: []
+  /api/accidents/total-estimated-cost:
+    get:
+      tags:
+        - Accidents
+      summary: 'Get the total estimated cost for all accidents.'
+      operationId: getTotalEstimatedAccidentCost
+      responses:
+        '200':
+          description: 'Aggregate cost.'
+          content:
+            application/json:
+              schema:
+                properties:
+                  totalEstimatedCost: { type: number, format: double }
+                type: object
+      security:
+        -
+          bearerAuth: []
+  /api/accidents/calculate-total-cost:
+    post:
+      tags:
+        - Accidents
+      summary: 'Calculate the combined cost for provided accidents payload.'
+      operationId: calculateAccidentTotalCost
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - accidents
+              properties:
+                accidents:
+                  type: array
+                  items: { type: object, additionalProperties: true }
+              type: object
+      responses:
+        '200':
+          description: 'Total cost calculated.'
+          content:
+            application/json:
+              schema:
+                properties:
+                  totalCost: { type: number, format: double }
+                type: object
+        '422':
+          description: 'Invalid payload.'
+      security:
+        -
+          bearerAuth: []
+  /api/accidents/search:
+    post:
+      tags:
+        - Accidents
+      summary: 'Search accidents using filters.'
+      operationId: searchAccidents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              description: 'Search filters as defined by AccidentSearchDTO.'
+              type: object
+      responses:
+        '200':
+          description: 'Search results.'
+          content:
+            application/json:
+              schema:
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Accident' } }
+                  count: { type: integer }
+                type: object
+      security:
+        -
+          bearerAuth: []
+  /api/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: 'Authenticate a user and return JWT tokens.'
+      operationId: authLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+              type: object
+      responses:
+        '200':
+          description: 'Authentication successful.'
+          content:
+            application/json:
+              schema:
+                required:
+                  - token
+                  - tokenType
+                  - expiresIn
+                  - refreshToken
+                  - refreshTokenExpiresAt
+                  - user
+                properties:
+                  token: { type: string }
+                  tokenType: { type: string, example: Bearer }
+                  expiresIn: { type: integer, example: 3600 }
+                  refreshToken: { type: string }
+                  refreshTokenExpiresAt: { type: string, format: date-time }
+                  user: { $ref: '#/components/schemas/User' }
+                type: object
+        '401':
+          description: 'Invalid credentials.'
+  /api/auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: 'Refresh an access token using a refresh token.'
+      operationId: authRefresh
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - refreshToken
+              properties:
+                refreshToken:
+                  type: string
+              type: object
+      responses:
+        '200':
+          description: 'New tokens issued.'
+          content:
+            application/json:
+              schema:
+                required:
+                  - token
+                  - tokenType
+                  - expiresIn
+                  - refreshToken
+                  - refreshTokenExpiresAt
+                  - user
+                properties:
+                  token: { type: string }
+                  tokenType: { type: string }
+                  expiresIn: { type: integer }
+                  refreshToken: { type: string }
+                  refreshTokenExpiresAt: { type: string, format: date-time }
+                  user: { $ref: '#/components/schemas/User' }
+                type: object
+        '401':
+          description: 'Refresh token invalid or expired.'
+  /api/auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: 'Invalidate tokens and terminate the current session.'
+      operationId: authLogout
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              properties:
+                invalidateAll:
+                  description: 'Revoke all tokens for the user.'
+                  type: boolean
+                refreshToken:
+                  type: string
+                  nullable: true
+              type: object
+      responses:
+        '204':
+          description: 'Logout successful.'
+      security:
+        -
+          bearerAuth: []
+  /api/countermeasures:
+    get:
+      tags:
+        - Countermeasures
+      summary: 'List countermeasures.'
+      operationId: listCountermeasures
+      responses:
+        '200':
+          description: 'Countermeasure collection.'
+          content:
+            application/json:
+              schema:
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Countermeasure' } }
+                type: object
+      security:
+        -
+          bearerAuth: []
+    post:
+      tags:
+        - Countermeasures
+      summary: 'Create a countermeasure.'
+      operationId: createCountermeasure
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Countermeasure'
+      responses:
+        '201':
+          description: 'Countermeasure created.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Countermeasure'
+        '422':
+          description: 'Invalid payload.'
+      security:
+        -
+          bearerAuth: []
+  '/api/countermeasures/{id}':
+    get:
+      tags:
+        - Countermeasures
+      summary: 'Get a countermeasure by id.'
+      operationId: getCountermeasure
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 'Countermeasure details.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Countermeasure'
+        '404':
+          description: 'Countermeasure not found.'
+      security:
+        -
+          bearerAuth: []
+    put:
+      tags:
+        - Countermeasures
+      summary: 'Update a countermeasure.'
+      operationId: updateCountermeasure
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Countermeasure'
+      responses:
+        '200':
+          description: 'Countermeasure updated.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Countermeasure'
+        '404':
+          description: 'Countermeasure not found.'
+      security:
+        -
+          bearerAuth: []
+    delete:
+      tags:
+        - Countermeasures
+      summary: 'Delete a countermeasure.'
+      operationId: deleteCountermeasure
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: 'Countermeasure deleted.'
+      security:
+        -
+          bearerAuth: []
+  /api/countermeasures/hotspot:
+    post:
+      tags:
+        - Countermeasures
+      summary: 'Find countermeasures suitable for a hotspot.'
+      operationId: findCountermeasuresForHotspot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - targetType
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: 'Matching countermeasures.'
+          content:
+            application/json:
+              schema:
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Countermeasure' } }
+                  count: { type: integer }
+                type: object
+        '422':
+          description: 'Invalid filter payload.'
+      security:
+        -
+          bearerAuth: []
+  /api/countermeasures/recalculate-cmf:
+    post:
+      tags:
+        - Countermeasures
+      summary: 'Recalculate countermeasure CMF metrics using project and accident context.'
+      operationId: recalculateCountermeasureCmf
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - project
+                - accident
+              properties:
+                project:
+                  type: object
+                  additionalProperties: true
+                accident:
+                  type: object
+                  additionalProperties: true
+              type: object
+      responses:
+        '200':
+          description: 'CMF recalculation triggered.'
+          content:
+            application/json:
+              schema:
+                properties:
+                  status: { type: string }
+                  projectId: { type: integer, format: int64 }
+                  countermeasureId: { type: integer, format: int64 }
+                type: object
+        '422':
+          description: 'Invalid payload.'
+      security:
+        -
+          bearerAuth: []
+  /api/hotspots:
+    post:
+      tags:
+        - Hotspots
+      summary: 'Create a hotspot.'
+      operationId: createHotspot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                id:
+                  type: integer
+                  format: int64
+              type: object
+              additionalProperties: true
+      responses:
+        '201':
+          description: 'Hotspot created.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Hotspot'
+        '422':
+          description: 'Validation error.'
+      security:
+        -
+          bearerAuth: []
+  '/api/hotspots/{id}':
+    get:
+      tags:
+        - Hotspots
+      summary: 'Get a hotspot by id.'
+      operationId: getHotspot
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 'Hotspot details.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Hotspot'
+        '404':
+          description: 'Hotspot not found.'
+      security:
+        -
+          bearerAuth: []
+    put:
+      tags:
+        - Hotspots
+      summary: 'Update a hotspot.'
+      operationId: updateHotspot
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: 'Hotspot updated.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Hotspot'
+        '404':
+          description: 'Hotspot not found.'
+      security:
+        -
+          bearerAuth: []
+    delete:
+      tags:
+        - Hotspots
+      summary: 'Delete a hotspot.'
+      operationId: deleteHotspot
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: 'Hotspot deleted.'
+      security:
+        -
+          bearerAuth: []
+  /api/hotspots/search:
+    post:
+      tags:
+        - Hotspots
+      summary: 'Search hotspots using filters.'
+      operationId: searchHotspots
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              description: 'Search filters defined in HotspotSearchDTO.'
+              type: object
+      responses:
+        '200':
+          description: 'Search results.'
+          content:
+            application/json:
+              schema:
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Hotspot' } }
+                  count: { type: integer }
+                type: object
+      security:
+        -
+          bearerAuth: []
+  /api/hotspots/screening:
+    post:
+      tags:
+        - Hotspots
+      summary: 'Run hotspot screening.'
+      operationId: screenHotspots
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - locationType
+                - threshold
+              properties:
+                locationType:
+                  type: string
+                threshold:
+                  type: number
+                  format: double
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: 'Screening results.'
+          content:
+            application/json:
+              schema:
+                properties:
+                  data: { type: array, items: { type: object } }
+                  count: { type: integer }
+                type: object
+        '422':
+          description: 'Invalid payload.'
+      security:
+        -
+          bearerAuth: []
+  /api/projects:
+    get:
+      tags:
+        - Projects
+      summary: 'List projects.'
+      operationId: listProjects
+      responses:
+        '200':
+          description: 'Project collection.'
+          content:
+            application/json:
+              schema:
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Project' } }
+                type: object
+      security:
+        -
+          bearerAuth: []
+    post:
+      tags:
+        - Projects
+      summary: 'Create a new project.'
+      operationId: createProject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Project'
+      responses:
+        '201':
+          description: 'Project created.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '422':
+          description: 'Validation error.'
+      security:
+        -
+          bearerAuth: []
+  '/api/projects/{id}':
+    get:
+      tags:
+        - Projects
+      summary: 'Get a project by id.'
+      operationId: getProject
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 'Project details.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '404':
+          description: 'Project not found.'
+      security:
+        -
+          bearerAuth: []
+    put:
+      tags:
+        - Projects
+      summary: 'Update a project.'
+      operationId: updateProject
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Project'
+      responses:
+        '200':
+          description: 'Project updated.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '404':
+          description: 'Project not found.'
+      security:
+        -
+          bearerAuth: []
+    delete:
+      tags:
+        - Projects
+      summary: 'Delete a project.'
+      operationId: deleteProject
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: 'Project deleted.'
+      security:
+        -
+          bearerAuth: []
+  '/api/projects/hotspot/{hotspotId}':
+    get:
+      tags:
+        - Projects
+      summary: 'List projects attached to a hotspot.'
+      operationId: getProjectsByHotspot
+      parameters:
+        -
+          name: hotspotId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 'Projects found.'
+          content:
+            application/json:
+              schema:
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Project' } }
+                  count: { type: integer }
+                type: object
+      security:
+        -
+          bearerAuth: []
+  '/api/projects/countermeasure/{countermeasureId}':
+    get:
+      tags:
+        - Projects
+      summary: 'List projects by countermeasure.'
+      operationId: getProjectsByCountermeasure
+      parameters:
+        -
+          name: countermeasureId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 'Projects found.'
+          content:
+            application/json:
+              schema:
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Project' } }
+                  count: { type: integer }
+                type: object
+      security:
+        -
+          bearerAuth: []
+  '/api/projects/status/{status}':
+    get:
+      tags:
+        - Projects
+      summary: 'List projects by status.'
+      operationId: getProjectsByStatus
+      parameters:
+        -
+          name: status
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 'Projects found.'
+          content:
+            application/json:
+              schema:
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Project' } }
+                  count: { type: integer }
+                type: object
+        '422':
+          description: 'Invalid status provided.'
+      security:
+        -
+          bearerAuth: []
+  '/api/projects/{id}/status':
+    post:
+      tags:
+        - Projects
+      summary: "Transition a project's status."
+      operationId: transitionProjectStatus
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+              type: object
+      responses:
+        '200':
+          description: 'Project status updated.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '422':
+          description: 'Invalid status value.'
+      security:
+        -
+          bearerAuth: []
+  /api/projects/evaluate:
+    post:
+      tags:
+        - Projects
+      summary: 'Trigger evaluation workflows for projects based on an accident.'
+      operationId: evaluateProjects
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - accident
+              properties:
+                accident:
+                  type: object
+                  additionalProperties: true
+              type: object
+      responses:
+        '200':
+          description: 'Evaluation triggered.'
+          content:
+            application/json:
+              schema:
+                properties:
+                  status: { type: string }
+                  accidentId: { type: integer, format: int64, nullable: true }
+                type: object
+        '422':
+          description: 'Invalid payload.'
+      security:
+        -
+          bearerAuth: []
+  /api/road-network/intersections:
+    get:
+      tags:
+        - 'Road Network'
+      summary: 'List intersections.'
+      operationId: listIntersections
+      responses:
+        '200':
+          description: 'Intersection collection.'
+          content:
+            application/json:
+              schema:
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Intersection' } }
+                type: object
+      security:
+        -
+          bearerAuth: []
+    post:
+      tags:
+        - 'Road Network'
+      summary: 'Create an intersection.'
+      operationId: createIntersection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Intersection'
+      responses:
+        '201':
+          description: 'Intersection created.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Intersection'
+        '422':
+          description: 'Invalid payload.'
+      security:
+        -
+          bearerAuth: []
+  '/api/road-network/intersections/{id}':
+    get:
+      tags:
+        - 'Road Network'
+      summary: 'Get an intersection by id.'
+      operationId: getIntersection
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 'Intersection details.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Intersection'
+        '404':
+          description: 'Intersection not found.'
+      security:
+        -
+          bearerAuth: []
+    put:
+      tags:
+        - 'Road Network'
+      summary: 'Update an intersection.'
+      operationId: updateIntersection
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Intersection'
+      responses:
+        '200':
+          description: 'Intersection updated.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Intersection'
+        '404':
+          description: 'Intersection not found.'
+      security:
+        -
+          bearerAuth: []
+    delete:
+      tags:
+        - 'Road Network'
+      summary: 'Delete an intersection.'
+      operationId: deleteIntersection
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: 'Intersection deleted.'
+      security:
+        -
+          bearerAuth: []
+  /api/road-network/segments:
+    get:
+      tags:
+        - 'Road Network'
+      summary: 'List road segments.'
+      operationId: listRoadSegments
+      responses:
+        '200':
+          description: 'Road segment collection.'
+          content:
+            application/json:
+              schema:
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/RoadSegment' } }
+                type: object
+      security:
+        -
+          bearerAuth: []
+    post:
+      tags:
+        - 'Road Network'
+      summary: 'Create a road segment.'
+      operationId: createRoadSegment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoadSegment'
+      responses:
+        '201':
+          description: 'Road segment created.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoadSegment'
+        '422':
+          description: 'Invalid payload.'
+      security:
+        -
+          bearerAuth: []
+  '/api/road-network/segments/{id}':
+    get:
+      tags:
+        - 'Road Network'
+      summary: 'Get a road segment by id.'
+      operationId: getRoadSegment
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 'Road segment details.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoadSegment'
+        '404':
+          description: 'Road segment not found.'
+      security:
+        -
+          bearerAuth: []
+    put:
+      tags:
+        - 'Road Network'
+      summary: 'Update a road segment.'
+      operationId: updateRoadSegment
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoadSegment'
+      responses:
+        '200':
+          description: 'Road segment updated.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoadSegment'
+        '404':
+          description: 'Road segment not found.'
+      security:
+        -
+          bearerAuth: []
+    delete:
+      tags:
+        - 'Road Network'
+      summary: 'Delete a road segment.'
+      operationId: deleteRoadSegment
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: 'Road segment deleted.'
+      security:
+        -
+          bearerAuth: []
+  /api/users:
+    get:
+      tags:
+        - Users
+      summary: 'List users.'
+      operationId: listUsers
+      responses:
+        '200':
+          description: 'User collection.'
+          content:
+            application/json:
+              schema:
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/User' } }
+                type: object
+      security:
+        -
+          bearerAuth: []
+    post:
+      tags:
+        - Users
+      summary: 'Register a new user.'
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+              type: object
+              additionalProperties: true
+      responses:
+        '201':
+          description: 'User created.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '422':
+          description: 'Invalid payload.'
+      security:
+        -
+          bearerAuth: []
+  '/api/users/{id}':
+    get:
+      tags:
+        - Users
+      summary: 'Get a user by id.'
+      operationId: getUser
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 'User details.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: 'User not found.'
+      security:
+        -
+          bearerAuth: []
+    put:
+      tags:
+        - Users
+      summary: 'Update user information.'
+      operationId: updateUser
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: 'User updated.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: 'User not found.'
+      security:
+        -
+          bearerAuth: []
+    delete:
+      tags:
+        - Users
+      summary: 'Delete a user.'
+      operationId: deleteUser
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: 'User deleted.'
+      security:
+        -
+          bearerAuth: []
+  /api/users/by-email:
+    get:
+      tags:
+        - Users
+      summary: 'Find a user by email address.'
+      operationId: getUserByEmail
+      parameters:
+        -
+          name: email
+          in: query
+          required: true
+          schema:
+            type: string
+            format: email
+      responses:
+        '200':
+          description: 'User details.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: 'User not found.'
+      security:
+        -
+          bearerAuth: []
+  '/api/users/{id}/role':
+    post:
+      tags:
+        - Users
+      summary: "Change a user's role."
+      operationId: changeUserRole
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - role
+              properties:
+                role:
+                  type: string
+              type: object
+      responses:
+        '200':
+          description: 'Role updated.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '422':
+          description: 'Invalid role.'
+      security:
+        -
+          bearerAuth: []
+  '/api/users/{id}/record-login':
+    post:
+      tags:
+        - Users
+      summary: 'Record a login timestamp for a user.'
+      operationId: recordUserLogin
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              properties:
+                loggedInAt:
+                  type: string
+                  format: date-time
+                  nullable: true
+              type: object
+      responses:
+        '204':
+          description: 'Login recorded.'
+      security:
+        -
+          bearerAuth: []
+  '/api/users/{id}/activate':
+    post:
+      tags:
+        - Users
+      summary: 'Activate a user.'
+      operationId: activateUser
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: 'User activated.'
+      security:
+        -
+          bearerAuth: []
+  '/api/users/{id}/deactivate':
+    post:
+      tags:
+        - Users
+      summary: 'Deactivate a user.'
+      operationId: deactivateUser
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: 'User deactivated.'
+      security:
+        -
+          bearerAuth: []
+components:
+  schemas:
+    PaginationMeta:
+      properties:
+        count:
+          type: integer
+          format: int32
+        status:
+          type: string
+      type: object
+    MonetaryAmount:
+      required:
+        - amount
+      properties:
+        amount:
+          type: number
+          format: double
+        currency:
+          type: string
+          example: USD
+      type: object
+    TimePeriod:
+      required:
+        - startDate
+        - endDate
+      properties:
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        durationDays:
+          type: integer
+      type: object
+    AccidentLocation:
+      required:
+        - locationType
+        - locationId
+      properties:
+        locationType:
+          type: string
+          example: road_segment
+        locationId:
+          type: integer
+          format: int64
+        latitude:
+          type: number
+          format: float
+          nullable: true
+        longitude:
+          type: number
+          format: float
+          nullable: true
+        distanceFromStart:
+          type: number
+          format: float
+          nullable: true
+      type: object
+    Accident:
+      required:
+        - id
+        - occurredAt
+        - location
+        - type
+      properties:
+        id:
+          type: integer
+          format: int64
+        occurredAt:
+          type: string
+          format: date-time
+        location:
+          $ref: '#/components/schemas/AccidentLocation'
+        cost:
+          oneOf:
+            -
+              $ref: '#/components/schemas/MonetaryAmount'
+          nullable: true
+        type:
+          type: string
+        severity:
+          type: string
+          nullable: true
+        collisionType:
+          type: string
+          nullable: true
+        causeFactor:
+          type: string
+          nullable: true
+        weatherCondition:
+          type: string
+          nullable: true
+        roadCondition:
+          type: string
+          nullable: true
+        visibilityCondition:
+          type: string
+          nullable: true
+        injuredPersonsCount:
+          type: integer
+          nullable: true
+        locationDescription:
+          type: string
+          nullable: true
+        requiresImmediateAttention:
+          type: boolean
+        daysSinceOccurrence:
+          type: integer
+      type: object
+    User:
+      required:
+        - id
+        - email
+        - firstName
+        - lastName
+        - role
+        - isActive
+      properties:
+        id:
+          type: integer
+          format: int64
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        displayName:
+          type: string
+        role:
+          type: string
+          example: analyst
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        lastLoginAt:
+          type: string
+          format: date-time
+          nullable: true
+      type: object
+    Project:
+      required:
+        - id
+        - countermeasureId
+        - hotspotId
+        - period
+        - expectedCost
+        - actualCost
+        - status
+      properties:
+        id:
+          type: integer
+          format: int64
+        countermeasureId:
+          type: integer
+          format: int64
+        hotspotId:
+          type: integer
+          format: int64
+        period:
+          $ref: '#/components/schemas/TimePeriod'
+        expectedCost:
+          $ref: '#/components/schemas/MonetaryAmount'
+        actualCost:
+          $ref: '#/components/schemas/MonetaryAmount'
+        status:
+          type: string
+      type: object
+    ObservedCrashes:
+      type: object
+      additionalProperties:
+        schema: OpenApiConfig
+        type: integer
+    OpenApiConfig:
+      type: integer
+    RoadSegment:
+      required:
+        - id
+        - lengthKm
+        - laneCount
+        - functionalClass
+        - speedLimitKmh
+        - aadt
+      properties:
+        id:
+          type: integer
+          format: int64
+        code:
+          type: string
+          nullable: true
+        lengthKm:
+          type: number
+          format: float
+        laneCount:
+          type: integer
+        functionalClass:
+          type: string
+        speedLimitKmh:
+          type: integer
+        aadt:
+          type: integer
+        geoLocation:
+          properties:
+            wkt:
+              type: string
+            city:
+              type: string
+              nullable: true
+            street:
+              type: string
+              nullable: true
+          type: object
+      type: object
+    Intersection:
+      required:
+        - id
+        - controlType
+        - numberOfLegs
+        - hasCameras
+        - aadt
+      properties:
+        id:
+          type: integer
+          format: int64
+        code:
+          type: string
+          nullable: true
+        controlType:
+          type: string
+        numberOfLegs:
+          type: integer
+        hasCameras:
+          type: boolean
+        aadt:
+          type: integer
+        spfModelReference:
+          type: string
+        geoLocation:
+          properties:
+            wkt:
+              type: string
+            city:
+              type: string
+              nullable: true
+            street:
+              type: string
+              nullable: true
+          type: object
+      type: object
+    Hotspot:
+      required:
+        - id
+        - location
+        - period
+        - expectedCrashes
+        - riskScore
+        - status
+      properties:
+        id:
+          type: integer
+          format: int64
+        location:
+          required:
+            - type
+            - data
+          properties:
+            type:
+              type: string
+              example: road_segment
+            data:
+              type: object
+          type: object
+        period:
+          $ref: '#/components/schemas/TimePeriod'
+        observedCrashes:
+          oneOf:
+            -
+              $ref: '#/components/schemas/ObservedCrashes'
+          nullable: true
+        expectedCrashes:
+          type: number
+          format: float
+        riskScore:
+          type: number
+          format: float
+        status:
+          type: string
+        screeningParameters:
+          type: object
+          nullable: true
+      type: object
+    Countermeasure:
+      required:
+        - id
+        - name
+        - targetType
+        - cmf
+        - lifecycleStatus
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        targetType:
+          type: string
+        affectedCollisionTypes:
+          type: array
+          items:
+            type: string
+        affectedSeverities:
+          type: array
+          items:
+            type: string
+        cmf:
+          type: number
+          format: float
+        lifecycleStatus:
+          type: string
+        implementationCost:
+          $ref: '#/components/schemas/MonetaryAmount'
+        expectedAnnualSavings:
+          type: number
+          format: float
+          nullable: true
+        evidence:
+          type: string
+          nullable: true
+      type: object
+  securitySchemes:
+    bearerAuth:
+      type: http
+      bearerFormat: JWT
+      scheme: bearer
+tags:
+  -
+    name: Accidents
+    description: Accidents
+  -
+    name: Authentication
+    description: Authentication
+  -
+    name: Countermeasures
+    description: Countermeasures
+  -
+    name: Hotspots
+    description: Hotspots
+  -
+    name: Projects
+    description: Projects
+  -
+    name: 'Road Network'
+    description: 'Road Network'
+  -
+    name: Users
+    description: Users
+

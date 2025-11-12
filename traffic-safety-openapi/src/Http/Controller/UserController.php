@@ -11,6 +11,7 @@ use App\Http\Router;
 use App\Http\Serializer\DomainSerializer;
 use SharedKernel\Enum\UserRole;
 use UserContext\Domain\Factory\UserFactory;
+use OpenApi\Annotations as OA;
 
 final class UserController extends BaseController
 {
@@ -28,6 +29,31 @@ final class UserController extends BaseController
         $router->add('DELETE', '/api/users/{id}', fn(Request $request): Response => $this->deleteUser($request), true, self::ROLE_ADMIN);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/users",
+     *     operationId="registerUser",
+     *     summary="Register a new user.",
+     *     tags={"Users"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={"email","password"},
+     *             additionalProperties=true,
+     *             @OA\Property(property="email", type="string", format="email"),
+     *             @OA\Property(property="password", type="string", format="password")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="User created.",
+     *         @OA\JsonContent(ref="#/components/schemas/User")
+     *     ),
+     *     @OA\Response(response=422, description="Invalid payload.")
+     * )
+     */
     private function registerUser(Request $request): Response
     {
         $payload = $request->getBody();
@@ -40,6 +66,27 @@ final class UserController extends BaseController
         return $this->created(DomainSerializer::user($created));
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/users",
+     *     operationId="listUsers",
+     *     summary="List users.",
+     *     tags={"Users"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="User collection.",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(ref="#/components/schemas/User")
+     *             )
+     *         )
+     *     )
+     * )
+     */
     private function listUsers(): Response
     {
         $users = $this->container->getUserService()->all();
@@ -49,6 +96,27 @@ final class UserController extends BaseController
         ]);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/users/{id}",
+     *     operationId="getUser",
+     *     summary="Get a user by id.",
+     *     tags={"Users"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer", format="int64")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="User details.",
+     *         @OA\JsonContent(ref="#/components/schemas/User")
+     *     ),
+     *     @OA\Response(response=404, description="User not found.")
+     * )
+     */
     private function getUser(Request $request): Response
     {
         $id = (int)$this->requireRouteParam($request, 'id');
@@ -61,6 +129,27 @@ final class UserController extends BaseController
         return $this->json(DomainSerializer::user($user));
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/users/by-email",
+     *     operationId="getUserByEmail",
+     *     summary="Find a user by email address.",
+     *     tags={"Users"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="email",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="string", format="email")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="User details.",
+     *         @OA\JsonContent(ref="#/components/schemas/User")
+     *     ),
+     *     @OA\Response(response=404, description="User not found.")
+     * )
+     */
     private function getUserByEmail(Request $request): Response
     {
         $email = $request->query('email');
@@ -76,6 +165,31 @@ final class UserController extends BaseController
         return $this->json(DomainSerializer::user($user));
     }
 
+    /**
+     * @OA\Put(
+     *     path="/api/users/{id}",
+     *     operationId="updateUser",
+     *     summary="Update user information.",
+     *     tags={"Users"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer", format="int64")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(type="object", additionalProperties=true)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="User updated.",
+     *         @OA\JsonContent(ref="#/components/schemas/User")
+     *     ),
+     *     @OA\Response(response=404, description="User not found.")
+     * )
+     */
     private function updateUser(Request $request): Response
     {
         $id = (int)$this->requireRouteParam($request, 'id');
@@ -106,6 +220,35 @@ final class UserController extends BaseController
         return $this->json(DomainSerializer::user($updated));
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/users/{id}/role",
+     *     operationId="changeUserRole",
+     *     summary="Change a user's role.",
+     *     tags={"Users"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer", format="int64")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={"role"},
+     *             @OA\Property(property="role", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Role updated.",
+     *         @OA\JsonContent(ref="#/components/schemas/User")
+     *     ),
+     *     @OA\Response(response=422, description="Invalid role.")
+     * )
+     */
     private function changeRole(Request $request): Response
     {
         $id = (int)$this->requireRouteParam($request, 'id');
@@ -122,6 +265,29 @@ final class UserController extends BaseController
         return $this->json(DomainSerializer::user($updated));
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/users/{id}/record-login",
+     *     operationId="recordUserLogin",
+     *     summary="Record a login timestamp for a user.",
+     *     tags={"Users"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer", format="int64")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=false,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="loggedInAt", type="string", format="date-time", nullable=true)
+     *         )
+     *     ),
+     *     @OA\Response(response=204, description="Login recorded.")
+     * )
+     */
     private function recordLogin(Request $request): Response
     {
         $id = (int)$this->requireRouteParam($request, 'id');
@@ -133,6 +299,22 @@ final class UserController extends BaseController
         return $this->noContent();
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/users/{id}/activate",
+     *     operationId="activateUser",
+     *     summary="Activate a user.",
+     *     tags={"Users"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer", format="int64")
+     *     ),
+     *     @OA\Response(response=204, description="User activated.")
+     * )
+     */
     private function activateUser(Request $request): Response
     {
         $id = (int)$this->requireRouteParam($request, 'id');
@@ -141,6 +323,22 @@ final class UserController extends BaseController
         return $this->noContent();
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/users/{id}/deactivate",
+     *     operationId="deactivateUser",
+     *     summary="Deactivate a user.",
+     *     tags={"Users"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer", format="int64")
+     *     ),
+     *     @OA\Response(response=204, description="User deactivated.")
+     * )
+     */
     private function deactivateUser(Request $request): Response
     {
         $id = (int)$this->requireRouteParam($request, 'id');
@@ -149,6 +347,22 @@ final class UserController extends BaseController
         return $this->noContent();
     }
 
+    /**
+     * @OA\Delete(
+     *     path="/api/users/{id}",
+     *     operationId="deleteUser",
+     *     summary="Delete a user.",
+     *     tags={"Users"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer", format="int64")
+     *     ),
+     *     @OA\Response(response=204, description="User deleted.")
+     * )
+     */
     private function deleteUser(Request $request): Response
     {
         $id = (int)$this->requireRouteParam($request, 'id');

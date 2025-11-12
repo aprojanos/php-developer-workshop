@@ -16,6 +16,7 @@ use SharedKernel\Enum\LocationType;
 use SharedKernel\Model\Hotspot;
 use SharedKernel\Model\Intersection;
 use SharedKernel\Model\RoadSegment;
+use OpenApi\Annotations as OA;
 
 final class HotspotController extends BaseController
 {
@@ -29,6 +30,29 @@ final class HotspotController extends BaseController
         $router->add('POST', '/api/hotspots/screening', fn(Request $request): Response => $this->screenHotspots($request), true, self::ROLE_ANALYST);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/hotspots",
+     *     operationId="createHotspot",
+     *     summary="Create a hotspot.",
+     *     tags={"Hotspots"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             additionalProperties=true,
+     *             @OA\Property(property="id", type="integer", format="int64")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Hotspot created.",
+     *         @OA\JsonContent(ref="#/components/schemas/Hotspot")
+     *     ),
+     *     @OA\Response(response=422, description="Validation error.")
+     * )
+     */
     private function createHotspot(Request $request): Response
     {
         $payload = $request->getBody();
@@ -42,6 +66,27 @@ final class HotspotController extends BaseController
         return $this->created($created !== null ? DomainSerializer::hotspot($created) : ['id' => $hotspot->id]);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/hotspots/{id}",
+     *     operationId="getHotspot",
+     *     summary="Get a hotspot by id.",
+     *     tags={"Hotspots"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer", format="int64")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Hotspot details.",
+     *         @OA\JsonContent(ref="#/components/schemas/Hotspot")
+     *     ),
+     *     @OA\Response(response=404, description="Hotspot not found.")
+     * )
+     */
     private function getHotspot(Request $request): Response
     {
         $id = (int)$this->requireRouteParam($request, 'id');
@@ -54,6 +99,31 @@ final class HotspotController extends BaseController
         return $this->json(DomainSerializer::hotspot($hotspot));
     }
 
+    /**
+     * @OA\Put(
+     *     path="/api/hotspots/{id}",
+     *     operationId="updateHotspot",
+     *     summary="Update a hotspot.",
+     *     tags={"Hotspots"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer", format="int64")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(type="object", additionalProperties=true)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Hotspot updated.",
+     *         @OA\JsonContent(ref="#/components/schemas/Hotspot")
+     *     ),
+     *     @OA\Response(response=404, description="Hotspot not found.")
+     * )
+     */
     private function updateHotspot(Request $request): Response
     {
         $id = (int)$this->requireRouteParam($request, 'id');
@@ -69,6 +139,22 @@ final class HotspotController extends BaseController
         return $this->json($updated !== null ? DomainSerializer::hotspot($updated) : ['id' => $id]);
     }
 
+    /**
+     * @OA\Delete(
+     *     path="/api/hotspots/{id}",
+     *     operationId="deleteHotspot",
+     *     summary="Delete a hotspot.",
+     *     tags={"Hotspots"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer", format="int64")
+     *     ),
+     *     @OA\Response(response=204, description="Hotspot deleted.")
+     * )
+     */
     private function deleteHotspot(Request $request): Response
     {
         $id = (int)$this->requireRouteParam($request, 'id');
@@ -77,6 +163,32 @@ final class HotspotController extends BaseController
         return $this->noContent();
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/hotspots/search",
+     *     operationId="searchHotspots",
+     *     summary="Search hotspots using filters.",
+     *     tags={"Hotspots"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(type="object", description="Search filters defined in HotspotSearchDTO.")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Search results.",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(ref="#/components/schemas/Hotspot")
+     *             ),
+     *             @OA\Property(property="count", type="integer")
+     *         )
+     *     )
+     * )
+     */
     private function searchHotspots(Request $request): Response
     {
         $payload = $request->getBody();
@@ -89,6 +201,39 @@ final class HotspotController extends BaseController
         ]);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/hotspots/screening",
+     *     operationId="screenHotspots",
+     *     summary="Run hotspot screening.",
+     *     tags={"Hotspots"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={"locationType","threshold"},
+     *             additionalProperties=true,
+     *             @OA\Property(property="locationType", type="string"),
+     *             @OA\Property(property="threshold", type="number", format="double")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Screening results.",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(type="object")
+     *             ),
+     *             @OA\Property(property="count", type="integer")
+     *         )
+     *     ),
+     *     @OA\Response(response=422, description="Invalid payload.")
+     * )
+     */
     private function screenHotspots(Request $request): Response
     {
         $payload = $request->getBody();

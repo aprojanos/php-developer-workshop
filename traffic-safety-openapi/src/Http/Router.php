@@ -13,6 +13,7 @@ use App\Http\Controller\RoadNetworkController;
 use Closure;
 use App\Http\Controller\UserController;
 use App\Http\Controller\AuthController;
+use App\Http\Controller\OpenApiController;
 
 final class Router
 {
@@ -35,6 +36,7 @@ final class Router
     public function register(Container $container): void
     {
         $controllers = [
+            new OpenApiController($container),
             new AuthController($container),
             new UserController($container),
             new AccidentController($container),

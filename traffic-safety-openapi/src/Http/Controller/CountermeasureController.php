@@ -21,6 +21,7 @@ use SharedKernel\Model\Countermeasure;
 use SharedKernel\Model\Project;
 use SharedKernel\ValueObject\MonetaryAmount;
 use SharedKernel\ValueObject\TimePeriod;
+use OpenApi\Annotations as OA;
 
 final class CountermeasureController extends BaseController
 {
@@ -35,6 +36,25 @@ final class CountermeasureController extends BaseController
         $router->add('POST', '/api/countermeasures/recalculate-cmf', fn(Request $request): Response => $this->recalculateCmf($request), true, self::ROLE_ANALYST);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/countermeasures",
+     *     operationId="createCountermeasure",
+     *     summary="Create a countermeasure.",
+     *     tags={"Countermeasures"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(ref="#/components/schemas/Countermeasure")
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Countermeasure created.",
+     *         @OA\JsonContent(ref="#/components/schemas/Countermeasure")
+     *     ),
+     *     @OA\Response(response=422, description="Invalid payload.")
+     * )
+     */
     private function createCountermeasure(Request $request): Response
     {
         $countermeasure = $this->hydrateCountermeasure($request->getBody(), false);
@@ -46,6 +66,27 @@ final class CountermeasureController extends BaseController
         return $this->created($created !== null ? DomainSerializer::countermeasure($created) : ['id' => $countermeasure->id]);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/countermeasures",
+     *     operationId="listCountermeasures",
+     *     summary="List countermeasures.",
+     *     tags={"Countermeasures"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Countermeasure collection.",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(ref="#/components/schemas/Countermeasure")
+     *             )
+     *         )
+     *     )
+     * )
+     */
     private function listCountermeasures(): Response
     {
         $countermeasures = $this->container->getCountermeasureService()->all();
@@ -55,6 +96,27 @@ final class CountermeasureController extends BaseController
         ]);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/countermeasures/{id}",
+     *     operationId="getCountermeasure",
+     *     summary="Get a countermeasure by id.",
+     *     tags={"Countermeasures"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer", format="int64")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Countermeasure details.",
+     *         @OA\JsonContent(ref="#/components/schemas/Countermeasure")
+     *     ),
+     *     @OA\Response(response=404, description="Countermeasure not found.")
+     * )
+     */
     private function getCountermeasure(Request $request): Response
     {
         $id = (int)$this->requireRouteParam($request, 'id');
@@ -67,6 +129,37 @@ final class CountermeasureController extends BaseController
         return $this->json(DomainSerializer::countermeasure($countermeasure));
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/countermeasures/hotspot",
+     *     operationId="findCountermeasuresForHotspot",
+     *     summary="Find countermeasures suitable for a hotspot.",
+     *     tags={"Countermeasures"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={"targetType"},
+     *             additionalProperties=true
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Matching countermeasures.",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(ref="#/components/schemas/Countermeasure")
+     *             ),
+     *             @OA\Property(property="count", type="integer")
+     *         )
+     *     ),
+     *     @OA\Response(response=422, description="Invalid filter payload.")
+     * )
+     */
     private function findForHotspot(Request $request): Response
     {
         $payload = $request->getBody();
@@ -80,6 +173,31 @@ final class CountermeasureController extends BaseController
         ]);
     }
 
+    /**
+     * @OA\Put(
+     *     path="/api/countermeasures/{id}",
+     *     operationId="updateCountermeasure",
+     *     summary="Update a countermeasure.",
+     *     tags={"Countermeasures"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer", format="int64")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(ref="#/components/schemas/Countermeasure")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Countermeasure updated.",
+     *         @OA\JsonContent(ref="#/components/schemas/Countermeasure")
+     *     ),
+     *     @OA\Response(response=404, description="Countermeasure not found.")
+     * )
+     */
     private function updateCountermeasure(Request $request): Response
     {
         $id = (int)$this->requireRouteParam($request, 'id');
@@ -95,6 +213,22 @@ final class CountermeasureController extends BaseController
         return $this->json($updated !== null ? DomainSerializer::countermeasure($updated) : ['id' => $id]);
     }
 
+    /**
+     * @OA\Delete(
+     *     path="/api/countermeasures/{id}",
+     *     operationId="deleteCountermeasure",
+     *     summary="Delete a countermeasure.",
+     *     tags={"Countermeasures"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer", format="int64")
+     *     ),
+     *     @OA\Response(response=204, description="Countermeasure deleted.")
+     * )
+     */
     private function deleteCountermeasure(Request $request): Response
     {
         $id = (int)$this->requireRouteParam($request, 'id');
@@ -103,6 +237,35 @@ final class CountermeasureController extends BaseController
         return $this->noContent();
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/countermeasures/recalculate-cmf",
+     *     operationId="recalculateCountermeasureCmf",
+     *     summary="Recalculate countermeasure CMF metrics using project and accident context.",
+     *     tags={"Countermeasures"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={"project","accident"},
+     *             @OA\Property(property="project", type="object", additionalProperties=true),
+     *             @OA\Property(property="accident", type="object", additionalProperties=true)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="CMF recalculation triggered.",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="status", type="string"),
+     *             @OA\Property(property="projectId", type="integer", format="int64"),
+     *             @OA\Property(property="countermeasureId", type="integer", format="int64")
+     *         )
+     *     ),
+     *     @OA\Response(response=422, description="Invalid payload.")
+     * )
+     */
     private function recalculateCmf(Request $request): Response
     {
         $payload = $request->getBody();

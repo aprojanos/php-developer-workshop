@@ -11,6 +11,7 @@ use App\Http\Response;
 use App\Http\Router;
 use App\Http\Serializer\DomainSerializer;
 use SharedKernel\DTO\AccidentSearchDTO;
+use OpenApi\Attributes as OA;
 
 final class AccidentController extends BaseController
 {
@@ -26,6 +27,29 @@ final class AccidentController extends BaseController
         $router->add('POST', '/api/accidents/search', fn(Request $request): Response => $this->searchAccidents($request), true, self::ROLE_VIEW);
     }
 
+    #[OA\Get(
+        path: '/api/accidents',
+        operationId: 'listAccidents',
+        summary: 'List all recorded accidents.',
+        tags: ['Accidents'],
+        security: [['bearerAuth' => []]],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Collection of accidents.',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    properties: [
+                        new OA\Property(
+                            property: 'data',
+                            type: 'array',
+                            items: new OA\Items(ref: '#/components/schemas/Accident')
+                        )
+                    ]
+                )
+            )
+        ]
+    )]
     private function listAccidents(): Response
     {
         $accidents = $this->container->getAccidentService()->all();
@@ -35,6 +59,30 @@ final class AccidentController extends BaseController
         ]);
     }
 
+    #[OA\Get(
+        path: '/api/accidents/{id}',
+        operationId: 'getAccident',
+        summary: 'Retrieve a single accident by its identifier.',
+        tags: ['Accidents'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'Accident identifier',
+                schema: new OA\Schema(type: 'integer', format: 'int64')
+            )
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Accident found.',
+                content: new OA\JsonContent(ref: '#/components/schemas/Accident')
+            ),
+            new OA\Response(response: 404, description: 'Accident not found.')
+        ]
+    )]
     private function getAccident(Request $request): Response
     {
         $id = (int)$this->requireRouteParam($request, 'id');
@@ -47,6 +95,32 @@ final class AccidentController extends BaseController
         return $this->json(DomainSerializer::accident($accident));
     }
 
+    #[OA\Post(
+        path: '/api/accidents',
+        operationId: 'createAccident',
+        summary: 'Create a new accident record.',
+        tags: ['Accidents'],
+        security: [['bearerAuth' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                description: 'Accident payload as accepted by the AccidentFactory.',
+                additionalProperties: true,
+                properties: [
+                    new OA\Property(property: 'id', type: 'integer', format: 'int64')
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: 'Accident created.',
+                content: new OA\JsonContent(ref: '#/components/schemas/Accident')
+            ),
+            new OA\Response(response: 422, description: 'Validation error.')
+        ]
+    )]
     private function createAccident(Request $request): Response
     {
         $payload = $request->getBody();
@@ -66,6 +140,39 @@ final class AccidentController extends BaseController
         ]);
     }
 
+    #[OA\Put(
+        path: '/api/accidents/{id}',
+        operationId: 'updateAccident',
+        summary: 'Update an existing accident record.',
+        tags: ['Accidents'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                required: true,
+                schema: new OA\Schema(type: 'integer', format: 'int64')
+            )
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                additionalProperties: true,
+                properties: [
+                    new OA\Property(property: 'id', type: 'integer', format: 'int64', nullable: true)
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Accident updated.',
+                content: new OA\JsonContent(ref: '#/components/schemas/Accident')
+            ),
+            new OA\Response(response: 404, description: 'Accident not found.')
+        ]
+    )]
     private function updateAccident(Request $request): Response
     {
         $id = (int)$this->requireRouteParam($request, 'id');
@@ -82,6 +189,24 @@ final class AccidentController extends BaseController
         return $this->json($updated !== null ? DomainSerializer::accident($updated) : ['id' => $id]);
     }
 
+    #[OA\Delete(
+        path: '/api/accidents/{id}',
+        operationId: 'deleteAccident',
+        summary: 'Delete an accident.',
+        tags: ['Accidents'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                required: true,
+                schema: new OA\Schema(type: 'integer', format: 'int64')
+            )
+        ],
+        responses: [
+            new OA\Response(response: 204, description: 'Accident deleted.')
+        ]
+    )]
     private function deleteAccident(Request $request): Response
     {
         $id = (int)$this->requireRouteParam($request, 'id');
@@ -90,6 +215,25 @@ final class AccidentController extends BaseController
         return $this->noContent();
     }
 
+    #[OA\Get(
+        path: '/api/accidents/total-estimated-cost',
+        operationId: 'getTotalEstimatedAccidentCost',
+        summary: 'Get the total estimated cost for all accidents.',
+        tags: ['Accidents'],
+        security: [['bearerAuth' => []]],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Aggregate cost.',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'totalEstimatedCost', type: 'number', format: 'double')
+                    ]
+                )
+            )
+        ]
+    )]
     private function totalEstimatedCost(): Response
     {
         $total = $this->container->getAccidentService()->totalEstimatedCost();
@@ -97,6 +241,43 @@ final class AccidentController extends BaseController
         return $this->json(['totalEstimatedCost' => $total]);
     }
 
+    #[OA\Post(
+        path: '/api/accidents/calculate-total-cost',
+        operationId: 'calculateAccidentTotalCost',
+        summary: 'Calculate the combined cost for provided accidents payload.',
+        tags: ['Accidents'],
+        security: [['bearerAuth' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                required: ['accidents'],
+                properties: [
+                    new OA\Property(
+                        property: 'accidents',
+                        type: 'array',
+                        items: new OA\Items(
+                            type: 'object',
+                            additionalProperties: true
+                        )
+                    )
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Total cost calculated.',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'totalCost', type: 'number', format: 'double')
+                    ]
+                )
+            ),
+            new OA\Response(response: 422, description: 'Invalid payload.')
+        ]
+    )]
     private function calculateTotalCost(Request $request): Response
     {
         $data = $this->requireJsonArray($request, 'accidents');
@@ -107,6 +288,37 @@ final class AccidentController extends BaseController
         return $this->json(['totalCost' => $total]);
     }
 
+    #[OA\Post(
+        path: '/api/accidents/search',
+        operationId: 'searchAccidents',
+        summary: 'Search accidents using filters.',
+        tags: ['Accidents'],
+        security: [['bearerAuth' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                description: 'Search filters as defined by AccidentSearchDTO.'
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Search results.',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    properties: [
+                        new OA\Property(
+                            property: 'data',
+                            type: 'array',
+                            items: new OA\Items(ref: '#/components/schemas/Accident')
+                        ),
+                        new OA\Property(property: 'count', type: 'integer')
+                    ]
+                )
+            )
+        ]
+    )]
     private function searchAccidents(Request $request): Response
     {
         $payload = $request->getBody();

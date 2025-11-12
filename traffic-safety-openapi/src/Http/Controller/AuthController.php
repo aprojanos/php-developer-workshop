@@ -10,6 +10,7 @@ use App\Http\Router;
 use App\Http\Serializer\DomainSerializer;
 use App\Http\Response;
 use DateTimeImmutable;
+use OpenApi\Annotations as OA;
 
 final class AuthController extends BaseController
 {
@@ -26,6 +27,38 @@ final class AuthController extends BaseController
         });
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/auth/login",
+     *     operationId="authLogin",
+     *     summary="Authenticate a user and return JWT tokens.",
+     *     tags={"Authentication"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={"email","password"},
+     *             @OA\Property(property="email", type="string", format="email"),
+     *             @OA\Property(property="password", type="string", format="password")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Authentication successful.",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={"token","tokenType","expiresIn","refreshToken","refreshTokenExpiresAt","user"},
+     *             @OA\Property(property="token", type="string"),
+     *             @OA\Property(property="tokenType", type="string", example="Bearer"),
+     *             @OA\Property(property="expiresIn", type="integer", example=3600),
+     *             @OA\Property(property="refreshToken", type="string"),
+     *             @OA\Property(property="refreshTokenExpiresAt", type="string", format="date-time"),
+     *             @OA\Property(property="user", ref="#/components/schemas/User")
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Invalid credentials.")
+     * )
+     */
     private function login(Request $request): Response
     {
         $email = strtolower(trim($this->requireJsonString($request, 'email')));
@@ -72,6 +105,37 @@ final class AuthController extends BaseController
         ]);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/auth/refresh",
+     *     operationId="authRefresh",
+     *     summary="Refresh an access token using a refresh token.",
+     *     tags={"Authentication"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={"refreshToken"},
+     *             @OA\Property(property="refreshToken", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="New tokens issued.",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={"token","tokenType","expiresIn","refreshToken","refreshTokenExpiresAt","user"},
+     *             @OA\Property(property="token", type="string"),
+     *             @OA\Property(property="tokenType", type="string"),
+     *             @OA\Property(property="expiresIn", type="integer"),
+     *             @OA\Property(property="refreshToken", type="string"),
+     *             @OA\Property(property="refreshTokenExpiresAt", type="string", format="date-time"),
+     *             @OA\Property(property="user", ref="#/components/schemas/User")
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Refresh token invalid or expired.")
+     * )
+     */
     private function refresh(Request $request): Response
     {
         $refreshTokenValue = $this->requireJsonString($request, 'refreshToken');
@@ -119,6 +183,24 @@ final class AuthController extends BaseController
         ]);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/auth/logout",
+     *     operationId="authLogout",
+     *     summary="Invalidate tokens and terminate the current session.",
+     *     tags={"Authentication"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=false,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="invalidateAll", type="boolean", description="Revoke all tokens for the user."),
+     *             @OA\Property(property="refreshToken", type="string", nullable=true)
+     *         )
+     *     ),
+     *     @OA\Response(response=204, description="Logout successful.")
+     * )
+     */
     private function logout(Request $request): Response
     {
         $authUser = $this->requireAuthenticatedUser($request);
