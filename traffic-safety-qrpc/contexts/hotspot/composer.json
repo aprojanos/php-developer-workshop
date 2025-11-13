@@ -1,0 +1,18 @@
+{
+  "name": "traffic-safety/hotspot-context",
+  "description": "Hotspot bounded context for traffic safety system.",
+  "version": "1.0.0",
+  "type": "library",
+  "license": "proprietary",
+  "autoload": {
+    "psr-4": {
+      "HotspotContext\\": "src/"
+    }
+  },
+  "require": {
+    "php": "^8.4",
+    "traffic-safety/shared-kernel": "^1.0",
+    "traffic-safety/accident-context": "^1.0"
+  }
+}
+

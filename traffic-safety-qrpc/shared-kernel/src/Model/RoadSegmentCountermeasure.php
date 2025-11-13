@@ -1,0 +1,55 @@
+<?php
+
+namespace SharedKernel\Model;
+
+use SharedKernel\Enum\TargetType;
+use SharedKernel\Enum\CollisionType;
+use SharedKernel\Enum\InjurySeverity;
+use SharedKernel\Enum\LifecycleStatus;
+use SharedKernel\ValueObject\RoadSegmentApplicabilityRules;
+use SharedKernel\ValueObject\MonetaryAmount;
+
+final readonly class RoadSegmentCountermeasure extends Countermeasure
+{
+    /**
+     * @param int $id
+     * @param string $name
+     * @param RoadSegmentApplicabilityRules $applicabilityRules
+     * @param array<CollisionType> $affectedCollisionTypes
+     * @param array<InjurySeverity> $affectedSeverities
+     * @param float $cmf
+     * @param LifecycleStatus $lifecycleStatus
+     * @param MonetaryAmount $implementationCost
+     * @param float|null $expectedAnnualSavings
+     * @param string|null $evidence
+     */
+    public function __construct(
+        int $id,
+        string $name,
+        public readonly RoadSegmentApplicabilityRules $applicabilityRules,
+        array $affectedCollisionTypes,
+        array $affectedSeverities,
+        float $cmf,
+        LifecycleStatus $lifecycleStatus,
+        MonetaryAmount $implementationCost,
+        ?float $expectedAnnualSavings = null,
+        ?string $evidence = null
+    ) {
+        parent::__construct(
+            $id,
+            $name,
+            $affectedCollisionTypes,
+            $affectedSeverities,
+            $cmf,
+            $lifecycleStatus,
+            $implementationCost,
+            $expectedAnnualSavings,
+            $evidence
+        );
+    }
+
+    public function getTargetType(): TargetType
+    {
+        return TargetType::ROAD_SEGMENT;
+    }
+}
