@@ -12,7 +12,9 @@
   "require": {
     "php": "^8.4",
     "traffic-safety/shared-kernel": "^1.0",
-    "traffic-safety/accident-context": "^1.0"
+    "traffic-safety/accident-context": "^1.0",
+    "grpc/grpc": "^1.61",
+    "google/protobuf": "^4.28"
   }
 }
 

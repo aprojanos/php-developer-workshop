@@ -8,6 +8,12 @@ use SharedKernel\Contract\NotifierInterface;
 use SharedKernel\Domain\Event\AccidentCreatedEvent;
 use SharedKernel\Domain\Event\EventBusInterface;
 use SharedKernel\Model\AccidentBase;
+use Google\Protobuf\Timestamp;
+use Traffic\Grpc\Accident\V1\Accident as AccidentMessage;
+use Traffic\Grpc\Accident\V1\AccidentLocation as AccidentLocationMessage;
+use Traffic\Grpc\Accident\V1\AllAccidentsResponse;
+use Traffic\Grpc\Accident\V1\LocationType as ProtoLocationType;
+use SharedKernel\DTO\AccidentLocationDTO;
 use AccidentContext\Domain\Service\SimpleCostCalculator;
 use SharedKernel\DTO\AccidentSearchCriteria;
 use SharedKernel\DTO\AccidentSearchDTO;
@@ -225,6 +231,69 @@ final class AccidentService
         ]);
 
         return $accidents;
+    }
+
+    /**
+     * Export accidents in gRPC format.
+     */
+    public function allAsGrpcResponse(): AllAccidentsResponse
+    {
+        $response = new AllAccidentsResponse();
+        $messages = [];
+
+        foreach ($this->all() as $accident) {
+            $messages[] = $this->mapAccidentToMessage($accident);
+        }
+
+        $response->setAccidents($messages);
+
+        return $response;
+    }
+
+    private function mapAccidentToMessage(AccidentBase $accident): AccidentMessage
+    {
+        $message = new AccidentMessage();
+        $message->setId($accident->id);
+        $message->setOccurredAt($this->createTimestamp($accident->occurredAt));
+        $message->setLocation($this->mapLocationToMessage($accident->location));
+        $message->setCost($accident->cost);
+        $message->setAccidentType($accident->getType()->value);
+        $message->setSeverity($accident->severity?->value ?? '');
+        $message->setCollisionType($accident->collisionType?->value ?? '');
+        $message->setCauseFactor($accident->causeFactor?->value ?? '');
+        $message->setWeatherCondition($accident->weatherCondition?->value ?? '');
+        $message->setRoadCondition($accident->roadCondition?->value ?? '');
+        $message->setVisibilityCondition($accident->visibilityCondition?->value ?? '');
+        $message->setInjuredPersonsCount($accident->injuredPersonsCount);
+
+        return $message;
+    }
+
+    private function mapLocationToMessage(AccidentLocationDTO $location): AccidentLocationMessage
+    {
+        $message = new AccidentLocationMessage();
+        $message->setType(match ($location->locationType) {
+            \SharedKernel\Enum\LocationType::ROADSEGMENT => ProtoLocationType::LOCATION_TYPE_ROADSEGMENT,
+            \SharedKernel\Enum\LocationType::INTERSECTION => ProtoLocationType::LOCATION_TYPE_INTERSECTION,
+        });
+        $message->setLocationId($location->locationId);
+        $message->setLatitude($location->latitude);
+        $message->setLongitude($location->longitude);
+
+        if ($location->distanceFromStart !== null) {
+            $message->setDistanceFromStart($location->distanceFromStart);
+        }
+
+        return $message;
+    }
+
+    private function createTimestamp(\DateTimeImmutable $dateTime): Timestamp
+    {
+        $timestamp = new Timestamp();
+        $timestamp->setSeconds($dateTime->getTimestamp());
+        $timestamp->setNanos((int) $dateTime->format('u') * 1000);
+
+        return $timestamp;
     }
 
     /**

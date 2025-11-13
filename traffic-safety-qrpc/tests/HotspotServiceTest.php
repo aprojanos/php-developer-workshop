@@ -5,15 +5,11 @@ use PHPUnit\Framework\MockObject\MockObject;
 use HotspotContext\Application\HotspotService;
 use SharedKernel\Contract\HotspotRepositoryInterface;
 use SharedKernel\Contract\LoggerInterface;
-use SharedKernel\Contract\AccidentRepositoryInterface;
-use SharedKernel\Contract\CostCalculatorStrategyInterface;
-use AccidentContext\Application\AccidentService;
-use SharedKernel\DTO\AccidentSearchCriteria;
+use HotspotContext\Application\Port\AccidentProviderInterface;
 use SharedKernel\Enum\HotspotStatus;
 use SharedKernel\Enum\LocationType;
 use SharedKernel\Enum\AccidentType;
 use SharedKernel\Enum\FunctionalClass;
-use SharedKernel\DTO\AccidentLocationDTO;
 use SharedKernel\DTO\HotspotScreeningDTO;
 use SharedKernel\DTO\HotspotSearchDTO;
 use SharedKernel\ValueObject\TimePeriod;
@@ -53,7 +49,7 @@ final class HotspotServiceTest extends TestCase
 
         $eventBus = new InMemoryEventBus();
 
-        $service = new HotspotService($repository, $this->createAccidentService(), $logger, $eventBus);
+        $service = new HotspotService($repository, $this->createAccidentProvider(), $logger, $eventBus);
         $service->create($hotspot);
 
         $this->assertCount(1, $eventBus->dispatchedEvents);
@@ -86,7 +82,7 @@ final class HotspotServiceTest extends TestCase
                 })
             );
 
-        $service = new HotspotService($repository, $this->createAccidentService(), $logger);
+        $service = new HotspotService($repository, $this->createAccidentProvider(), $logger);
         $this->assertSame($hotspot, $service->findById(7));
     }
 
@@ -101,7 +97,7 @@ final class HotspotServiceTest extends TestCase
             ->with(404)
             ->willReturn(null);
 
-        $service = new HotspotService($repository, $this->createAccidentService());
+        $service = new HotspotService($repository, $this->createAccidentProvider());
 
         $this->expectException(\InvalidArgumentException::class);
         $service->update($hotspot);
@@ -134,7 +130,7 @@ final class HotspotServiceTest extends TestCase
                 })
             );
 
-        $service = new HotspotService($repository, $this->createAccidentService(), $logger);
+        $service = new HotspotService($repository, $this->createAccidentProvider(), $logger);
         $service->update($hotspot);
     }
 
@@ -147,7 +143,7 @@ final class HotspotServiceTest extends TestCase
             ->with(55)
             ->willReturn(null);
 
-        $service = new HotspotService($repository, $this->createAccidentService());
+        $service = new HotspotService($repository, $this->createAccidentProvider());
 
         $this->expectException(\InvalidArgumentException::class);
         $service->delete(55);
@@ -176,7 +172,7 @@ final class HotspotServiceTest extends TestCase
                 $this->callback(static fn (array $context): bool => $context['id'] === 33 && $context['status'] === HotspotStatus::REVIEWED->value)
             );
 
-        $service = new HotspotService($repository, $this->createAccidentService(), $logger);
+        $service = new HotspotService($repository, $this->createAccidentProvider(), $logger);
         $service->delete(33);
     }
 
@@ -229,7 +225,7 @@ final class HotspotServiceTest extends TestCase
                 })
             );
 
-        $service = new HotspotService($repository, $this->createAccidentService(), $logger);
+        $service = new HotspotService($repository, $this->createAccidentProvider(), $logger);
         $result = $service->search($dto);
 
         $this->assertSame([$hotspotHigh, $hotspotLow], $result);
@@ -316,7 +312,7 @@ final class HotspotServiceTest extends TestCase
 
         $service = new HotspotService(
             $repository,
-            $this->createAccidentService([
+            $this->createAccidentProvider([
                 $roadSegmentAccidentA,
                 $roadSegmentAccidentB,
                 $otherRoadAccident,
@@ -412,62 +408,19 @@ final class HotspotServiceTest extends TestCase
     /**
      * @param AccidentBase[] $accidents
      */
-    private function createAccidentService(array $accidents = []): AccidentService
+    private function createAccidentProvider(array $accidents = []): AccidentProviderInterface
     {
-        $repository = new class($accidents) implements AccidentRepositoryInterface {
+        return new class($accidents) implements AccidentProviderInterface {
             /**
-             * @param array<int, AccidentBase> $accidents
+             * @param AccidentBase[] $accidents
              */
             public function __construct(private array $accidents) {}
 
-            public function save(AccidentBase $accident): void
-            {
-                $this->accidents[$accident->id] = $accident;
-            }
-
             public function all(): array
             {
-                return array_values($this->accidents);
-            }
-
-            public function findById(int $id): ?AccidentBase
-            {
-                return $this->accidents[$id] ?? null;
-            }
-
-            public function update(AccidentBase $accident): void
-            {
-                $this->accidents[$accident->id] = $accident;
-            }
-
-            public function delete(int $id): void
-            {
-                unset($this->accidents[$id]);
-            }
-
-            public function findByLocation(AccidentLocationDTO $location): array
-            {
-                return array_values(array_filter(
-                    $this->accidents,
-                    static fn (AccidentBase $accident): bool => $accident->location->locationType === $location->locationType
-                        && $accident->location->locationId === $location->locationId
-                ));
-            }
-
-            public function search(AccidentSearchCriteria $criteria): array
-            {
-                return [];
+                return $this->accidents;
             }
         };
-
-        $calculator = new class implements CostCalculatorStrategyInterface {
-            public function calculate(AccidentBase $accident): float
-            {
-                return $accident->cost;
-            }
-        };
-
-        return new AccidentService($repository, $calculator);
     }
 }
 

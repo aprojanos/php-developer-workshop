@@ -2,7 +2,7 @@
 
 namespace HotspotContext\Application;
 
-use AccidentContext\Application\AccidentService;
+use HotspotContext\Application\Port\AccidentProviderInterface;
 use SharedKernel\Contract\HotspotRepositoryInterface;
 use SharedKernel\Contract\LoggerInterface;
 use SharedKernel\Domain\Event\EventBusInterface;
@@ -21,7 +21,7 @@ final class HotspotService
 {
     public function __construct(
         private HotspotRepositoryInterface $repository,
-        private AccidentService $accidentService,
+        private AccidentProviderInterface $accidentProvider,
         private ?LoggerInterface $logger = null,
         private ?EventBusInterface $eventBus = null,
     ) {}
@@ -125,7 +125,7 @@ final class HotspotService
     public function screeningForHotspots(HotspotScreeningDTO $dto): array
     {
         $locationType = $dto->locationType;
-        $allAccidents = $this->accidentService->all();
+        $allAccidents = $this->accidentProvider->all();
 
         $filteredAccidents = array_filter(
             $allAccidents,
@@ -202,7 +202,7 @@ final class HotspotService
         $hotspots = [];
 
         foreach ($accidentsByLocation as $locationId => $accidents) {
-            $score = $this->accidentService->calculateTotalCost($accidents);
+            $score = $this->calculateTotalCost($accidents);
 
             if (
                 ($locationType === LocationType::ROADSEGMENT && isset($existingRoadSegments[$locationId]))
@@ -243,6 +243,17 @@ final class HotspotService
         }
 
         return [$roadSegments, $intersections];
+    }
+
+    private function calculateTotalCost(array $accidents): float
+    {
+        $sum = 0.0;
+
+        foreach ($accidents as $accident) {
+            $sum += $accident->cost;
+        }
+
+        return $sum;
     }
 
     private function convertStatus(mixed $value): ?HotspotStatus

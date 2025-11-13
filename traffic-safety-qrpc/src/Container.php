@@ -15,7 +15,11 @@ use App\Security\RefreshTokenManager;
 use CountermeasureContext\Application\CountermeasureService;
 use CountermeasureContext\Infrastructure\Repository\PdoCountermeasureRepository;
 use HotspotContext\Application\HotspotService;
+use HotspotContext\Application\Port\AccidentProviderInterface;
 use HotspotContext\Infrastructure\Repository\PdoHotspotRepository;
+use HotspotContext\Infrastructure\Grpc\AccidentGrpcClient;
+use HotspotContext\Infrastructure\Grpc\AccidentMessageHydrator;
+use HotspotContext\Infrastructure\LocalAccidentProvider;
 use NotificationContext\Application\NotificationService;
 use NotificationContext\Infrastructure\Notifier\FileNotifier;
 use ProjectContext\Application\ProjectService;
@@ -36,6 +40,7 @@ use SharedKernel\Domain\Event\InMemoryEventBus;
 use UserContext\Application\UserService;
 use UserContext\Infrastructure\Repository\PdoUserRepository;
 use SharedKernel\Domain\Event\EventBusInterface;
+use Traffic\Grpc\Accident\V1\AccidentServiceClient;
 
 final class Container
 {
@@ -54,6 +59,7 @@ final class Container
 
     private ?AccidentService $accidentService = null;
     private ?HotspotService $hotspotService = null;
+    private ?AccidentProviderInterface $accidentProvider = null;
     private ?ProjectService $projectService = null;
     private ?CountermeasureService $countermeasureService = null;
     private ?RoadNetworkService $roadNetworkService = null;
@@ -208,13 +214,63 @@ final class Container
         if ($this->hotspotService === null) {
             $this->hotspotService = new HotspotService(
                 repository: $this->getHotspotRepository(),
-                accidentService: $this->getAccidentService(),
+                accidentProvider: $this->getAccidentProvider(),
                 logger: $this->getLogger(),
                 eventBus: $this->getEventBus(),
             );
         }
 
         return $this->hotspotService;
+    }
+
+    private function getAccidentProvider(): AccidentProviderInterface
+    {
+        if ($this->accidentProvider !== null) {
+            return $this->accidentProvider;
+        }
+
+        $endpoint = $_ENV['ACCIDENT_GRPC_ENDPOINT'] ?? null;
+
+        if ($endpoint === null || $endpoint === '') {
+            $this->accidentProvider = new LocalAccidentProvider($this->getAccidentService());
+
+            return $this->accidentProvider;
+        }
+
+        if (!class_exists(AccidentServiceClient::class)) {
+            $this->getLogger()?->warning('gRPC accident client stubs are missing; falling back to local service', [
+                'expectedClass' => AccidentServiceClient::class,
+            ]);
+
+            $this->accidentProvider = new LocalAccidentProvider($this->getAccidentService());
+
+            return $this->accidentProvider;
+        }
+
+        try {
+            $client = new AccidentServiceClient(
+                $endpoint,
+                [
+                    'credentials' => \Grpc\ChannelCredentials::createInsecure(),
+                ]
+            );
+
+            $this->accidentProvider = new AccidentGrpcClient(
+                client: $client,
+                hydrator: new AccidentMessageHydrator(),
+                logger: $this->getLogger(),
+            );
+        } catch (\Throwable $exception) {
+            $this->getLogger()?->error('Failed to initialize gRPC accident client; falling back to local service', [
+                'endpoint' => $endpoint,
+                'exception' => $exception::class,
+                'message' => $exception->getMessage(),
+            ]);
+
+            $this->accidentProvider = new LocalAccidentProvider($this->getAccidentService());
+        }
+
+        return $this->accidentProvider;
     }
 
     public function getNotificationService(): NotificationService

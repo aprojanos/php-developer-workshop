@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package traffic.accident.v1;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+option php_namespace = "Traffic\\Grpc\\Accident\\V1";
+option php_metadata_namespace = "Traffic\\Grpc\\Accident\\V1\\GPBMetadata";
+
+enum LocationType {
+  LOCATION_TYPE_UNSPECIFIED = 0;
+  LOCATION_TYPE_ROADSEGMENT = 1;
+  LOCATION_TYPE_INTERSECTION = 2;
+}
+
+message AccidentLocation {
+  LocationType type = 1;
+  int32 location_id = 2;
+  double latitude = 3;
+  double longitude = 4;
+  optional double distance_from_start = 5;
+}
+
+message Accident {
+  int32 id = 1;
+  google.protobuf.Timestamp occurred_at = 2;
+  AccidentLocation location = 3;
+  double cost = 4;
+  string accident_type = 5;
+  string severity = 6;
+  string collision_type = 7;
+  string cause_factor = 8;
+  string weather_condition = 9;
+  string road_condition = 10;
+  string visibility_condition = 11;
+  int32 injured_persons_count = 12;
+}
+
+message AllAccidentsResponse {
+  repeated Accident accidents = 1;
+}
+
+service AccidentService {
+  rpc All(google.protobuf.Empty) returns (AllAccidentsResponse);
+}
+
