@@ -133,15 +133,15 @@ $searchDTO = new AccidentSearchDTO(
 );
 $accidents = $accidentService->search($searchDTO);
 echo "Found " . count($accidents) . " accidents.\n";
-foreach ($accidents as $accident) {
-    echo $accident->id . " - " . $accident->occurredAt->format('Y-m-d') . " - " . $accident->getType()->value . " - " . $accident->location->latitude . " - " . $accident->location->longitude . " - " . $accident->location->distanceFromStart . "\n";
-    echo "  - Severity: " . $accident->getSeverityLabel() . "\n";
-    echo "  - Cost: " . $accident->cost . "\n";
-    echo "  - Road Segment ID: " . $accident->location->getRoadSegmentId() . "\n";
-    echo "  - Intersection ID: " . $accident->location->getIntersectionId() . "\n";
-    echo "  - Distance from start: " . $accident->location->distanceFromStart . "\n";
-    echo "\n";
-}
+// foreach ($accidents as $accident) {
+//     echo $accident->id . " - " . $accident->occurredAt->format('Y-m-d') . " - " . $accident->getType()->value . " - " . $accident->location->latitude . " - " . $accident->location->longitude . " - " . $accident->location->distanceFromStart . "\n";
+//     echo "  - Severity: " . $accident->getSeverityLabel() . "\n";
+//     echo "  - Cost: " . $accident->cost . "\n";
+//     echo "  - Road Segment ID: " . $accident->location->getRoadSegmentId() . "\n";
+//     echo "  - Intersection ID: " . $accident->location->getIntersectionId() . "\n";
+//     echo "  - Distance from start: " . $accident->location->distanceFromStart . "\n";
+//     echo "\n";
+// }
 
 // screening for hotspots
 $hotspotRepository  = new PdoHotspotRepository($pdo);
