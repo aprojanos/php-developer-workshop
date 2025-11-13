@@ -14,8 +14,18 @@ final class PdoAccidentRepository implements AccidentRepositoryInterface
 
     public function save(AccidentBase $accident): void
     {
-        $stmt = $this->pdo->prepare('INSERT INTO accidents (id, occurred_at, location, severity, type, cost, road_segment_id, intersection_id, distance_from_start)
-            VALUES (:id,:occurred_at,:location,:severity,:type,:cost,:road_segment_id,:intersection_id,:distance_from_start)');
+        $stmt = $this->pdo->prepare('INSERT INTO accidents (
+                id, occurred_at, location, severity, type, cost,
+                road_segment_id, intersection_id, distance_from_start,
+                collision_type, cause_factor, weather_conditions, road_conditions, visibility_conditions,
+                injured_persons_count, location_description
+            )
+            VALUES (
+                :id, :occurred_at, :location, :severity, :type, :cost,
+                :road_segment_id, :intersection_id, :distance_from_start,
+                :collision_type, :cause_factor, :weather_conditions, :road_conditions, :visibility_conditions,
+                :injured_persons_count, :location_description
+            )');
         $stmt->execute([
             'id' => $accident->id,
             'occurred_at' => $accident->occurredAt->format('c'),
@@ -26,6 +36,13 @@ final class PdoAccidentRepository implements AccidentRepositoryInterface
             'road_segment_id' => $accident->location->getRoadSegmentId(),
             'intersection_id' => $accident->location->getIntersectionId(),
             'distance_from_start' => $accident->location->distanceFromStart,
+            'collision_type' => $accident->collisionType?->value,
+            'cause_factor' => $accident->causeFactor?->value,
+            'weather_conditions' => $accident->weatherCondition?->value,
+            'road_conditions' => $accident->roadCondition?->value,
+            'visibility_conditions' => $accident->visibilityCondition?->value,
+            'injured_persons_count' => $accident->injuredPersonsCount,
+            'location_description' => $accident->locationDescription,
         ]);
     }
 
@@ -41,16 +58,7 @@ final class PdoAccidentRepository implements AccidentRepositoryInterface
                 $r['intersection_id'],
                 $r['distance_from_start']
             );
-            $result[] = AccidentFactory::create([
-                'id' => (int)$r['id'],
-                'occurredAt' => $r['occurred_at'],
-                'location' => $location,
-                'severity' => $r['severity'],
-                'cost' => (float)$r['cost'],
-                'roadSegmentId' => $r['road_segment_id'] !== null ? (int)$r['road_segment_id'] : null,
-                'intersectionId' => $r['intersection_id'] !== null ? (int)$r['intersection_id'] : null,
-                'distanceFromStart' => $r['distance_from_start'] !== null ? (float)$r['distance_from_start'] : null,
-            ]);
+            $result[] = $this->hydrateAccident($r, $location);
         }
         return $result;
     }
@@ -69,16 +77,7 @@ final class PdoAccidentRepository implements AccidentRepositoryInterface
             $r['intersection_id'],
             $r['distance_from_start']
         );
-        return AccidentFactory::create([
-            'id' => (int)$r['id'],
-            'occurredAt' => $r['occurred_at'],
-            'location' => $location,
-            'severity' => $r['severity'],
-            'cost' => (float)$r['cost'],
-            'roadSegmentId' => $r['road_segment_id'] !== null ? (int)$r['road_segment_id'] : null,
-            'intersectionId' => $r['intersection_id'] !== null ? (int)$r['intersection_id'] : null,
-            'distanceFromStart' => $r['distance_from_start'] !== null ? (float)$r['distance_from_start'] : null,
-        ]);
+        return $this->hydrateAccident($r, $location);
     }
 
     public function update(AccidentBase $accident): void
@@ -91,7 +90,15 @@ final class PdoAccidentRepository implements AccidentRepositoryInterface
                 cost = :cost,
                 road_segment_id = :road_segment_id,
                 intersection_id = :intersection_id,
-                distance_from_start = :distance_from_start
+                distance_from_start = :distance_from_start,
+                collision_type = :collision_type,
+                cause_factor = :cause_factor,
+                weather_conditions = :weather_conditions,
+                road_conditions = :road_conditions,
+                visibility_conditions = :visibility_conditions,
+                injured_persons_count = :injured_persons_count,
+                location_description = :location_description,
+                updated_at = NOW()
             WHERE id = :id');
         $stmt->execute([
             'id' => $accident->id,
@@ -103,6 +110,13 @@ final class PdoAccidentRepository implements AccidentRepositoryInterface
             'road_segment_id' => $accident->location->getRoadSegmentId(),
             'intersection_id' => $accident->location->getIntersectionId(),
             'distance_from_start' => $accident->location->distanceFromStart,
+            'collision_type' => $accident->collisionType?->value,
+            'cause_factor' => $accident->causeFactor?->value,
+            'weather_conditions' => $accident->weatherCondition?->value,
+            'road_conditions' => $accident->roadCondition?->value,
+            'visibility_conditions' => $accident->visibilityCondition?->value,
+            'injured_persons_count' => $accident->injuredPersonsCount,
+            'location_description' => $accident->locationDescription,
         ]);
     }
 
@@ -131,15 +145,7 @@ final class PdoAccidentRepository implements AccidentRepositoryInterface
                 $r['intersection_id'],
                 $r['distance_from_start']
             );
-            $result[] = AccidentFactory::create([
-                'id' => (int)$r['id'],
-                'occurredAt' => $r['occurred_at'],
-                'location' => $accidentLocation,
-                'severity' => $r['severity'],
-                'cost' => (float)$r['cost'],
-                'roadSegmentId' => $r['road_segment_id'] !== null ? (int)$r['road_segment_id'] : null,
-                'intersectionId' => $r['intersection_id'] !== null ? (int)$r['intersection_id'] : null,
-            ]);
+            $result[] = $this->hydrateAccident($r, $accidentLocation);
         }
         return $result;
     }
@@ -233,15 +239,7 @@ final class PdoAccidentRepository implements AccidentRepositoryInterface
                 $r['intersection_id'],
                 $r['distance_from_start']
             );
-            $result[] = AccidentFactory::create([
-                'id' => (int)$r['id'],
-                'occurredAt' => $r['occurred_at'],
-                'location' => $accidentLocation,
-                'severity' => $r['severity'],
-                'cost' => (float)$r['cost'],
-                'roadSegmentId' => $r['road_segment_id'] !== null ? (int)$r['road_segment_id'] : null,
-                'intersectionId' => $r['intersection_id'] !== null ? (int)$r['intersection_id'] : null,
-            ]);
+            $result[] = $this->hydrateAccident($r, $accidentLocation);
         }
         return $result;
     }
@@ -280,5 +278,29 @@ final class PdoAccidentRepository implements AccidentRepositoryInterface
             longitude: $longitude,
             distanceFromStart: $distanceFromStart
         );
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function hydrateAccident(array $row, AccidentLocationDTO $location): AccidentBase
+    {
+        return AccidentFactory::create([
+            'id' => (int)$row['id'],
+            'occurredAt' => $row['occurred_at'],
+            'location' => $location,
+            'severity' => $row['severity'],
+            'cost' => (float)$row['cost'],
+            'roadSegmentId' => $row['road_segment_id'] !== null ? (int)$row['road_segment_id'] : null,
+            'intersectionId' => $row['intersection_id'] !== null ? (int)$row['intersection_id'] : null,
+            'distanceFromStart' => $row['distance_from_start'] !== null ? (float)$row['distance_from_start'] : null,
+            'collisionType' => $row['collision_type'],
+            'causeFactor' => $row['cause_factor'],
+            'weatherCondition' => $row['weather_conditions'],
+            'roadCondition' => $row['road_conditions'],
+            'visibilityCondition' => $row['visibility_conditions'],
+            'injuredPersonsCount' => isset($row['injured_persons_count']) ? (int)$row['injured_persons_count'] : null,
+            'locationDescription' => $row['location_description'] ?? null,
+        ]);
     }
 }

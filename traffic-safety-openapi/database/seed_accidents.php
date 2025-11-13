@@ -11,6 +11,10 @@ use AccidentContext\Infrastructure\Seeder\AccidentSeeder;
 use App\Logger\FileLogger;
 use Dotenv\Dotenv;
 use NotificationContext\Infrastructure\Notifier\FileNotifier;
+use SharedKernel\Domain\Event\InMemoryEventBus;
+use NotificationContext\Application\NotificationService;
+use ProjectContext\Infrastructure\Repository\PdoProjectRepository;
+use ProjectContext\Application\ProjectService;
 
 $envFile = __DIR__ . '/../.env';
 if (file_exists($envFile)) {
@@ -32,9 +36,14 @@ $pdo = new PDO($dsn, $dbUser, $dbPassword, [
 
 $logger = new FileLogger(__DIR__ . '/../storage/logs/seed.log');
 $notifier = new FileNotifier(__DIR__ . '/../storage/logs/seed_notifications.log');
+$eventBus = new InMemoryEventBus();
+$notificationService = new NotificationService($notifier, $eventBus);
 $repository = new PdoAccidentRepository($pdo);
 $costCalculator = new SimpleCostCalculator();
-$service = new AccidentService($repository, $costCalculator, $logger, $notifier);
+$service = new AccidentService($repository, $costCalculator, $logger, $notifier, $eventBus);
+
+$projectRepository = new PdoProjectRepository($pdo);
+$projectService = new ProjectService($projectRepository, $logger, $eventBus);
 
 $seeder = new AccidentSeeder($service, $pdo);
 

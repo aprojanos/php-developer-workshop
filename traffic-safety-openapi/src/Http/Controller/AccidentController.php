@@ -11,6 +11,7 @@ use App\Http\Response;
 use App\Http\Router;
 use App\Http\Serializer\DomainSerializer;
 use SharedKernel\DTO\AccidentSearchDTO;
+use SharedKernel\Model\AccidentBase;
 use OpenApi\Attributes as OA;
 
 final class AccidentController extends BaseController
@@ -124,10 +125,6 @@ final class AccidentController extends BaseController
     private function createAccident(Request $request): Response
     {
         $payload = $request->getBody();
-        if (!isset($payload['id'])) {
-            throw new HttpException('Field "id" is required.', 422);
-        }
-
         $accident = AccidentFactory::create($payload);
         $service = $this->container->getAccidentService();
         $service->create($accident);
@@ -177,11 +174,19 @@ final class AccidentController extends BaseController
     {
         $id = (int)$this->requireRouteParam($request, 'id');
         $payload = $request->getBody();
-        $payload['id'] = $id;
-
-        $accident = AccidentFactory::create($payload);
 
         $service = $this->container->getAccidentService();
+        $existing = $service->findById($id);
+
+        if ($existing === null) {
+            throw new HttpException('Accident not found.', 404);
+        }
+
+        $basePayload = $this->accidentToFactoryPayload($existing);
+        $mergedPayload = array_replace($basePayload, $payload);
+        $mergedPayload['id'] = $id;
+
+        $accident = AccidentFactory::create($mergedPayload);
         $service->update($accident);
 
         $updated = $service->findById($id);
@@ -330,6 +335,39 @@ final class AccidentController extends BaseController
             'data' => DomainSerializer::accidents($results),
             'count' => count($results),
         ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function accidentToFactoryPayload(AccidentBase $accident): array
+    {
+        $location = $accident->location;
+
+        $payload = [
+            'id' => $accident->id,
+            'occurredAt' => $accident->occurredAt->format('c'),
+            'type' => $accident->getType()->value,
+            'severity' => $accident->severity?->value,
+            'cost' => $accident->cost,
+            'collisionType' => $accident->collisionType?->value,
+            'causeFactor' => $accident->causeFactor?->value,
+            'weatherCondition' => $accident->weatherCondition?->value,
+            'roadCondition' => $accident->roadCondition?->value,
+            'visibilityCondition' => $accident->visibilityCondition?->value,
+            'injuredPersonsCount' => $accident->injuredPersonsCount,
+            'locationDescription' => $accident->locationDescription,
+            'roadSegmentId' => $location->getRoadSegmentId(),
+            'intersectionId' => $location->getIntersectionId(),
+            'latitude' => $location->latitude,
+            'longitude' => $location->longitude,
+            'distanceFromStart' => $location->distanceFromStart,
+        ];
+
+        return array_filter(
+            $payload,
+            static fn($value) => $value !== null
+        );
     }
 }
 

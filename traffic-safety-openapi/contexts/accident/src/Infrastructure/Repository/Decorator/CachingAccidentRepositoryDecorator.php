@@ -33,11 +33,11 @@ final class CachingAccidentRepositoryDecorator implements AccidentRepositoryInte
     {
         if ($this->cache !== null) {
             if ($this->ttl === null) {
-                echo "Caching decorator: read from cache" . PHP_EOL;
+                // echo "Caching decorator: read from cache" . PHP_EOL;
                 return $this->cache;
             }
             if ($this->cacheCreatedAt !== null && (time() - $this->cacheCreatedAt) < $this->ttl) {
-                echo "Caching decorator: read from cache" . PHP_EOL;
+                //echo "Caching decorator: read from cache" . PHP_EOL;
                 return $this->cache;
             }
         }
